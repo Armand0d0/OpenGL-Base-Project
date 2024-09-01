@@ -388,4 +388,3 @@ int main(){
     return 0;
 }
 
- //g++ -I ./include *.c *.cpp -lglfw3 -lX11 && ./a.out
