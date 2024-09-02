@@ -123,12 +123,14 @@ struct inputData{
     bool key_E;
     bool key_B;
     bool key_N;
+    bool key_ENTER;
     //hud parameters
     int wireMode;
     int showEdges;
     int showBackSideEdges;
     int showVertexIndicies;
     int showNormals;
+    int debugMode;
 } typedef inputData;
 inputData* initInputData(){
     inputData* in;
@@ -144,12 +146,14 @@ inputData* initInputData(){
     in->key_E = false;
     in->key_B = false;
     in->key_N = false;
+    in->key_ENTER = false;
     //hud parameters
     in->wireMode = 0;
     in->showEdges = 0;
     in->showBackSideEdges = 1;
     in->showVertexIndicies = 0;
     in->showNormals = 0;
+    in->debugMode = 0;
     return in;
 }
 struct camera{
@@ -287,6 +291,12 @@ void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle)
 void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
 
     glfwPollEvents();
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
     
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             glfwSetWindowShouldClose(window, true);   
@@ -332,9 +342,15 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
         onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
         onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
         onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
+        onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode));
+        if(in->debugMode == 0){
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }else{
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
 }
 
-void update(inputData* in,windowParams* wp,camera* cam){
+void update(inputData* in, windowParams* wp, camera* cam){
 
         //Camera mouvement
         float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
@@ -342,14 +358,15 @@ void update(inputData* in,windowParams* wp,camera* cam){
 }
 
 
-void render(GLFWwindow* window,windowParams* wp,renderData* rd, camera* cam,inputData* in){
+void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, inputData* in){
         
         //Camera orientation
-        cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
-        cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
-        cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
-        cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
-        
+        if(in->debugMode == 0){
+            cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
+            cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
+            cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
+            cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
+        }
         //camera setup
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
@@ -400,7 +417,6 @@ int main(){
         glfwTerminate();
         return -1;
     }
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
@@ -471,11 +487,7 @@ int main(){
 
         processInputs(window,in,mp);
 
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::ShowDemoWindow();
+        
 
         int counter = 0;
         double t1 = glfwGetTime();
