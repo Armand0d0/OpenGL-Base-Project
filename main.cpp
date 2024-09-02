@@ -163,6 +163,25 @@ renderData* initRenderData(unsigned int VAO,unsigned int shaderProgram,unsigned 
     rd->texture = texture;
     return rd;
 }
+unsigned int compileShader(const char * fileName,unsigned int shaderType){
+    string sourceString = readFile(fileName);
+    const char *shaderSource = sourceString.c_str();
+    unsigned int shader;
+    shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, &shaderSource, NULL);
+    glCompileShader(shader);
+
+    //check for compilation errors
+    int  success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        cout << "ERROR::SHADER::COMPILATION_FAILED\n"<< fileName << " : " << infoLog << endl;
+    }
+    return shader;
+}
 
 void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
     if(glfwGetKey(window,key) == GLFW_PRESS){
@@ -296,55 +315,9 @@ int main(){
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
 
-    //VERTEX SHADER
-    string vertexSourceString = readFile("./vertexShader.glsl");
-    const char *vertexShaderSource = vertexSourceString.c_str();
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    //check for compilation errors
-    int  success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
-    }
-    //GEOMETRY SHADER
-    string geometrySourceString = readFile("./geometryShader.glsl");
-    const char *geometryShaderSource = geometrySourceString.c_str();
-    unsigned int geometryShader;
-    geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-    glShaderSource(geometryShader, 1, &geometryShaderSource, NULL);
-    glCompileShader(geometryShader);
-
-    //check for compilation errors
-    glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
-        cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << endl;
-    }
-    //FRAGMENT SHADER
-    string fragmentSourceString = readFile("./fragmentShader.glsl");
-    const char *fragmentShaderSource = fragmentSourceString.c_str();
-
-
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    //check for compilation errors
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        cout << "ERROR SHADER FRAGMENT COMPILATION_FAILED\n" << infoLog << endl;
-    }
+    unsigned int vertexShader = compileShader("./vertexShader.glsl",GL_VERTEX_SHADER);
+    unsigned int geometryShader = compileShader("./geometryShader.glsl",GL_GEOMETRY_SHADER);
+    unsigned int fragmentShader = compileShader("./fragmentShader.glsl",GL_FRAGMENT_SHADER);
 
     //build shader program
     unsigned int shaderProgram;
@@ -355,6 +328,8 @@ int main(){
     glLinkProgram(shaderProgram);
 
     //check for errors
+    int  success;
+    char infoLog[512];
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
     glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
