@@ -182,7 +182,30 @@ unsigned int compileShader(const char * fileName,unsigned int shaderType){
     }
     return shader;
 }
+unsigned int loadTexture(const char* fileName){
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    int texWidth, texHeight, nrChannels;
+    unsigned char *data = stbi_load(fileName, &texWidth, &texHeight, &nrChannels, 0); 
+
+    if (data){
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else{
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+    return texture;
+}
 void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
     if(glfwGetKey(window,key) == GLFW_PRESS){
         *was_pressed = true;
@@ -286,22 +309,16 @@ int main(){
     GLFWwindow* window;
     int width = 1920,
     height = 1080;
-    /* Initialize the library */
 
     if (!glfwInit()){
             cout<<"The glfw window intialisation failed !"<<endl;
             return -1;
     }
-
     glfwSetErrorCallback(error_callback);
-
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-
-    /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
     if (!window)
     {
@@ -309,8 +326,6 @@ int main(){
         return -1;
     }
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    /* Make the window's context current */
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
@@ -393,39 +408,16 @@ int main(){
     
 
     //Texture setup
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int texWidth, texHeight, nrChannels;
-    unsigned char *data = stbi_load("screen.png", &texWidth, &texHeight, &nrChannels, 0); 
-
-    if (data){
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else{
-        std::cout << "Failed to load texture" << std::endl;
-    }
-
-    stbi_image_free(data);//*/
+    unsigned int numbersTexture = loadTexture("screen.png");
     
-    //unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
     glEnable(GL_DEPTH_TEST);  
 
     inputData* in = initInputData();
     mouseParams* mp = initMouseParams();
     windowParams* wp = initWindowsParams();
     camera* cam = initCamera(wp);
-    renderData* rd = initRenderData(VAO,shaderProgram,texture);
+    renderData* rd = initRenderData(VAO,shaderProgram,numbersTexture);
 
     while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
     {

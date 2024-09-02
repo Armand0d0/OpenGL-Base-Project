@@ -28,7 +28,13 @@ void main(){
             vec3 lightDir = normalize(lightPos);
             vec4 lightcolor = vec4(1.0);
             float lightIntensity = 0.25;
-            gl_FragColor = 0.4*vec4(1., .8, .8, 0.0)+ lightcolor*lightIntensity*dot(normal,lightDir);
+            vec4 objectColor;
+            if(true){
+                objectColor = texture(numbers,TexCoord);
+            }else{
+                objectColor = vec4(1., .8, .8, 0.0);
+            }
+            gl_FragColor = 0.4*objectColor+ lightcolor*lightIntensity*dot(normal,lightDir);
         }
 
     }
