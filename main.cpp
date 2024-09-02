@@ -151,6 +151,19 @@ camera* initCamera(windowParams* wp){
     return cam;
 }
 
+struct renderData{
+    unsigned int VAO;
+    unsigned int shaderProgram;
+    unsigned int texture;
+}typedef renderData;
+renderData* initRenderData(unsigned int VAO,unsigned int shaderProgram,unsigned int texture){
+    renderData* rd = new renderData;
+    rd->VAO = VAO;
+    rd->shaderProgram = shaderProgram;
+    rd->texture = texture;
+    return rd;
+}
+
 void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
     if(glfwGetKey(window,key) == GLFW_PRESS){
         *was_pressed = true;
@@ -161,6 +174,9 @@ void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle)
     }
 }
 void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
+
+    glfwPollEvents();
+    
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             glfwSetWindowShouldClose(window, true);   
         }
@@ -216,6 +232,35 @@ void update(inputData* in,windowParams* wp,camera* cam){
         //Camera mouvement
         float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
         cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways - Y*in->upwards)*camSpeed;
+}
+
+
+void render(GLFWwindow* window,windowParams* wp,renderData* rd, camera* cam,inputData* in){
+        //camera setup
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
+        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.y,cam->relativeXAxis);
+        viewMatrix = glm::translate(viewMatrix,cam->position);
+        glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f),wp->ratio,0.0001f,100.0f);
+        //update uniform variables
+        glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram,"viewMatrix"),1,GL_FALSE,glm::value_ptr(viewMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram,"projMatrix"),1,GL_FALSE,glm::value_ptr(projMatrix));
+        glUniform1f(glGetUniformLocation(rd->shaderProgram,"ratio"),wp->ratio);
+        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showEdges"),in->showEdges);
+        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
+        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showNormals"),in->showNormals);
+        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showVertexIndicies"),in->showVertexIndicies);
+        glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), glfwGetTime());
+        //Draw
+        glClearColor(135./255.,209./255.,235/255.,1.);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, rd->texture);
+        glUseProgram(rd->shaderProgram);
+        glBindVertexArray(rd->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+        glDrawElements(GL_TRIANGLES,39/*sizeof(gameItem->indices)*/,GL_UNSIGNED_INT,0);
+        //glDrawElements(GL_LINE_STRIP,sizeof(indices),GL_UNSIGNED_INT,0);
+        glfwSwapBuffers(window);
 }
 int main(){
 
@@ -401,15 +446,11 @@ int main(){
 
     glEnable(GL_DEPTH_TEST);  
 
-    
-
-
-    
-
     inputData* in = initInputData();
     mouseParams* mp = initMouseParams();
     windowParams* wp = initWindowsParams();
     camera* cam = initCamera(wp);
+    renderData* rd = initRenderData(VAO,shaderProgram,texture);
 
     while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
     {
@@ -421,42 +462,16 @@ int main(){
         update(in,wp,cam);
 
         //Render
-        glm::mat4 viewMatrix = glm::mat4(1.0f);
-        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
-        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.y,cam->relativeXAxis);
-        viewMatrix = glm::translate(viewMatrix,cam->position);
-        glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f),wp->ratio,0.0001f,100.0f);
-        //update uniform variables
-        glUniform1f(glGetUniformLocation(shaderProgram, "time"), time);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"viewMatrix"),1,GL_FALSE,glm::value_ptr(viewMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"projMatrix"),1,GL_FALSE,glm::value_ptr(projMatrix));
-        glUniform1f(glGetUniformLocation(shaderProgram,"ratio"),wp->ratio);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showEdges"),in->showEdges);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showNormals"),in->showNormals);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showVertexIndicies"),in->showVertexIndicies);
-        //Draw
-        glClearColor(135./255.,209./255.,235/255.,1.);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glDrawElements(GL_TRIANGLES,sizeof(indices),GL_UNSIGNED_INT,0);
-        //glDrawElements(GL_LINE_STRIP,sizeof(indices),GL_UNSIGNED_INT,0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        render(window,wp,rd,cam,in);
     }
     delete in;
     delete mp;
     delete wp;
     delete cam;
+    delete rd;
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &buffer);
     glDeleteProgram(shaderProgram);
-
-
     glfwTerminate();
     return 0;
 }
