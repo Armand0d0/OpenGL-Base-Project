@@ -18,7 +18,11 @@ void main(){
         float wireDistance = 0.002/gl_FragCoord.w;
         bool showWire = (baryCoord.x < wireDistance || baryCoord.y < wireDistance || baryCoord.z < wireDistance);
         if(showWire && showEdges == 1){
-            gl_FragColor =  vec4(0., .0, 0.0, 0.0);
+            gl_FragColor =  vec4(0., 1.0, 0.0, 0.0);
+            /*float epsilon = wireDistance;
+            if(abs(baryCoord.x-wireDistance)< epsilon || abs(baryCoord.y-wireDistance)< epsilon || abs(baryCoord.z-wireDistance)< epsilon ){
+                gl_FragColor = vec4(1.);
+            }*/
             if(showBackSideEdges == 1){
                 gl_FragDepth = 0.0001;
             }

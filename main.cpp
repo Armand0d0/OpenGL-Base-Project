@@ -182,6 +182,55 @@ unsigned int compileShader(const char * fileName,unsigned int shaderType){
     }
     return shader;
 }
+unsigned int buildShaderProgram(){
+    unsigned int vertexShader = compileShader("./vertexShader.glsl",GL_VERTEX_SHADER);
+    unsigned int geometryShader = compileShader("./geometryShader.glsl",GL_GEOMETRY_SHADER);
+    unsigned int fragmentShader = compileShader("./fragmentShader.glsl",GL_FRAGMENT_SHADER);
+
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, geometryShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    //check for errors
+    int  success;
+    char infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cout<<"ERROR LINKING SHADER PROGRAM : "<< infoLog<<endl;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(geometryShader);
+    glDeleteShader(fragmentShader); 
+    return shaderProgram;
+}
+unsigned int loadMesh(float* vertices,unsigned int vertexCount,unsigned int* indices,unsigned int indexCount){
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int buffer;
+    glGenBuffers(1,&buffer);
+    glBindBuffer(GL_ARRAY_BUFFER,buffer);
+    glBufferData(GL_ARRAY_BUFFER,vertexCount,vertices,GL_STATIC_DRAW);
+
+    
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount, indices, GL_STATIC_DRAW); 
+
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);  
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1); 
+    return VAO;
+}
 unsigned int loadTexture(const char* fileName){
     unsigned int texture;
     glGenTextures(1, &texture);
@@ -305,7 +354,6 @@ void render(GLFWwindow* window,windowParams* wp,renderData* rd, camera* cam,inpu
         glfwSwapBuffers(window);
 }
 int main(){
-
     GLFWwindow* window;
     int width = 1920,
     height = 1080;
@@ -329,33 +377,7 @@ int main(){
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
-
-    unsigned int vertexShader = compileShader("./vertexShader.glsl",GL_VERTEX_SHADER);
-    unsigned int geometryShader = compileShader("./geometryShader.glsl",GL_GEOMETRY_SHADER);
-    unsigned int fragmentShader = compileShader("./fragmentShader.glsl",GL_FRAGMENT_SHADER);
-
-    //build shader program
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, geometryShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    //check for errors
-    int  success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if(!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        cout<<"ERROR LINKING SHADER PROGRAM : "<< infoLog<<endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(geometryShader);
-    glDeleteShader(fragmentShader); 
-
     //----------------------------------------------------------------------------------------- MESH DATA
-
     float vertices[] = {
     //positions             texCoords
      0.5f,  0.5f, 0.5f,     1.f,0.f,         // top right 
@@ -383,31 +405,10 @@ int main(){
         0, 4, 7,//*/
 
     };  
-
     //-----------------------------------------------------------------------------------------
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
 
-    unsigned int buffer;
-    glGenBuffers(1,&buffer);
-    glBindBuffer(GL_ARRAY_BUFFER,buffer);
-    glBufferData(GL_ARRAY_BUFFER,sizeof(vertices),vertices,GL_STATIC_DRAW);
-
-    
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
-
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);  
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
-    glEnableVertexAttribArray(1);  
-    
-
-    //Texture setup
+    unsigned int shaderProgram = buildShaderProgram();
+    unsigned int VAO = loadMesh(vertices,sizeof(vertices),indices,sizeof(indices));
     unsigned int numbersTexture = loadTexture("screen.png");
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -437,7 +438,7 @@ int main(){
     delete cam;
     delete rd;
     glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &buffer);
+    //glDeleteBuffers(1, &buffer);//TODO : cleanup VAO, VBO EBO 
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
