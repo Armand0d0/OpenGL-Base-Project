@@ -296,7 +296,7 @@ int main(){
             glfwSetWindowShouldClose(window, true);   
         }
         
-        double mx,my;;
+        double mx,my;
         glfwGetCursorPos(window,&mx,&my);
         glm::vec2 mousePos = glm::vec2((float)mx,(float)my);
 
