@@ -4,4 +4,5 @@
 TODO:   
 -Add an .obj file loader  
 -Make a proper time coherent game loop  
--display FPS/UPS  
+-use IMGUI, display FPS/UPS  
+-adapt window size to the screen  

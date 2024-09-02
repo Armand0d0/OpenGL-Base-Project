@@ -12,6 +12,13 @@
 #include <glm/gtx/string_cast.hpp>
 #include "stb_image.h"
 
+#define X glm::vec3(1.f,.0f,.0f)
+#define Y glm::vec3(0.f,1.f,.0f)
+#define Z glm::vec3(0.f,.0f,1.0f)
+#define X1 glm::vec4(1.f,.0f,.0f,1.0f)
+#define Y1 glm::vec4(0.f,1.f,.0f,1.0f)
+#define Z1 glm::vec4(0.f,.0f,1.0f,1.0f)
+
 
 using namespace std;
 
@@ -54,16 +61,6 @@ glm::vec3 rotate3(glm::vec3 v, float angle, glm::vec3 axis){
 
     return glm::vec3(v4.x,v4.y,v4.z);
 }
-
-void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
-    if(glfwGetKey(window,key) == GLFW_PRESS){
-        *was_pressed = true;
-    }else if(*was_pressed){
-        *toggle = 1-*toggle;
-        *was_pressed = false;
-
-    }
-}
 glm::vec3 normalize(glm::vec3 v){
     float n = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
     if(n < 0.000001){
@@ -71,6 +68,29 @@ glm::vec3 normalize(glm::vec3 v){
     } 
     return v/n;
 }
+
+struct windowParams{
+    int width;
+    int height;
+    float ratio;
+}typedef windowParams;
+windowParams* initWindowsParams(){
+    windowParams* wp = new windowParams;
+    wp->width = 1920;
+    wp->height = 1080;
+    wp->ratio = (float)wp->width/(float)wp->height;
+    return wp;
+}
+
+struct mouseParams{
+    glm::vec2 mouseSensivity;
+}typedef mouseParams;
+mouseParams* initMouseParams(){
+    mouseParams* mp = new mouseParams;
+    mp->mouseSensivity = glm::vec2(1.f,1.f);
+    return mp;
+}
+
 struct inputData{
     glm::vec2 mousePos;
     float forward;
@@ -90,8 +110,7 @@ struct inputData{
     int showVertexIndicies;
     int showNormals;
 } typedef inputData;
-
-inputData* initialInputData(){
+inputData* initInputData(){
     inputData* in;
     in = new inputData;
     in->mousePos = glm::vec2(0.f);
@@ -111,18 +130,44 @@ inputData* initialInputData(){
     in->showBackSideEdges = 1;
     in->showVertexIndicies = 0;
     in->showNormals = 0;
-
     return in;
 }
+struct camera{
+    glm::vec3 position;
+    glm::vec2 angleRotation;
+    glm::vec3 relativeXAxis;
+    glm::vec3 relativeZAxis;
+    float speed;
+    float runningSpeedFactor;
 
-void processInputs(GLFWwindow* window, inputData * in){
+}typedef camera;
+camera* initCamera(windowParams* wp){
+    camera* cam = new camera;
+    cam->position = glm::vec3(0.f,0.0f,-2.0f);
+    cam->angleRotation = glm::vec2(0.,0.);
+    cam->relativeZAxis = Z;
+    cam->speed = 0.02f;
+    cam->runningSpeedFactor = 5.0;
+    return cam;
+}
+
+void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
+    if(glfwGetKey(window,key) == GLFW_PRESS){
+        *was_pressed = true;
+    }else if(*was_pressed){
+        *toggle = 1-*toggle;
+        *was_pressed = false;
+
+    }
+}
+void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             glfwSetWindowShouldClose(window, true);   
         }
         
         double mx,my;
         glfwGetCursorPos(window,&mx,&my);
-        in->mousePos = glm::vec2((float)mx,(float)my);
+        in->mousePos = glm::vec2((float)mx*mp->mouseSensivity.x,(float)my*mp->mouseSensivity.x);
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
             in->forward = 1;   
@@ -162,6 +207,16 @@ void processInputs(GLFWwindow* window, inputData * in){
         onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
 }
 
+void update(inputData* in,windowParams* wp,camera* cam){
+        //Camera orientation
+        cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
+        cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
+        cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
+        cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
+        //Camera mouvement
+        float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
+        cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways - Y*in->upwards)*camSpeed;
+}
 int main(){
 
     GLFWwindow* window;
@@ -346,55 +401,36 @@ int main(){
 
     glEnable(GL_DEPTH_TEST);  
 
-    glm::vec3 X = glm::vec3(1.f,.0f,.0f);
-    glm::vec3 Y = glm::vec3(0.f,1.f,.0f);
-    glm::vec3 Z = glm::vec3(0.f,.0f,1.0f);
-    glm::vec4 X1 = glm::vec4(1.f,.0f,.0f,1.0f);
-    glm::vec4 Y1 = glm::vec4(0.f,1.f,.0f,1.0f);
-    glm::vec4 Z1 = glm::vec4(0.f,.0f,1.0f,1.0f);
+    
 
-    glm::vec2 mousSensivity = glm::vec2(1.f,1.f);
-    float ratio = (float)width/(float)height;
-    //Initialise Camera
-    glm::vec3 camPos = glm::vec3(0.f,0.0f,-2.0f);
-    glm::vec2 camAngleRot = glm::vec2(-(0.5f*width)/width,-(0.5f*height)/height);
-    glm::vec3 camDir = Z;
 
-    float camSpeed = 0.02f;
-    float runningSpeedFactor = 5.0;
+    
 
-   inputData* in = initialInputData();
-
+    inputData* in = initInputData();
+    mouseParams* mp = initMouseParams();
+    windowParams* wp = initWindowsParams();
+    camera* cam = initCamera(wp);
 
     while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
     {
         //Inputs
-        processInputs(window,in);
+        processInputs(window,in,mp);
 
         float time = glfwGetTime();
-
-        //Camera View Setup
-        glm::vec2 camAngleRot = glm::vec2(-(-in->mousePos.x*mousSensivity.x + 0.5f*width)/width,-(-in->mousePos.y*mousSensivity.y + 0.5f*height)/height);
-        glm::mat4 viewMatrix = glm::mat4(1.0f);
-        viewMatrix = glm::rotate(viewMatrix,camAngleRot.x,Y);
-        glm::vec3 camX = rotate3(X,-camAngleRot.x,Y);
-        viewMatrix = glm::rotate(viewMatrix,camAngleRot.y,camX);
-        viewMatrix = glm::translate(viewMatrix,camPos);
-
-        glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f),ratio,0.0001f,100.0f);
-        camDir = rotate3(camX,glm::radians(-90.0),Y);
-        camDir = rotate3(camDir,-camAngleRot.y,camX);
-
-
-        //Mouvement
-        camPos += normalize(camDir*in->forward + camX*in->sideways - Y*in->upwards)*camSpeed*(1.f+in->running*(runningSpeedFactor-1.f));
+        //Update
+        update(in,wp,cam);
 
         //Render
+        glm::mat4 viewMatrix = glm::mat4(1.0f);
+        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
+        viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.y,cam->relativeXAxis);
+        viewMatrix = glm::translate(viewMatrix,cam->position);
+        glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f),wp->ratio,0.0001f,100.0f);
         //update uniform variables
         glUniform1f(glGetUniformLocation(shaderProgram, "time"), time);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"viewMatrix"),1,GL_FALSE,glm::value_ptr(viewMatrix));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"projMatrix"),1,GL_FALSE,glm::value_ptr(projMatrix));
-        glUniform1f(glGetUniformLocation(shaderProgram,"ratio"),ratio);
+        glUniform1f(glGetUniformLocation(shaderProgram,"ratio"),wp->ratio);
         glUniform1i(glGetUniformLocation(shaderProgram,"showEdges"),in->showEdges);
         glUniform1i(glGetUniformLocation(shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
         glUniform1i(glGetUniformLocation(shaderProgram,"showNormals"),in->showNormals);
@@ -413,6 +449,9 @@ int main(){
         glfwPollEvents();
     }
     delete in;
+    delete mp;
+    delete wp;
+    delete cam;
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &buffer);
     glDeleteProgram(shaderProgram);
