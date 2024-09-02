@@ -12,6 +12,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include "stb_image.h"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 
 #define X glm::vec3(1.f,.0f,.0f)
 #define Y glm::vec3(0.f,1.f,.0f)
@@ -70,6 +73,20 @@ glm::vec3 normalize(glm::vec3 v){
         return glm::vec3(0.,0.,0.);
     } 
     return v/n;
+}
+
+void initIMGUI(GLFWwindow* window){
+    // Setup Dear ImGui context
+IMGUI_CHECKVERSION();
+ImGui::CreateContext();
+ImGuiIO& io = ImGui::GetIO();
+io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+
+// Setup Platform/Renderer backends
+ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+ImGui_ImplOpenGL3_Init();
 }
 
 struct windowParams{
@@ -357,6 +374,10 @@ void render(GLFWwindow* window,windowParams* wp,renderData* rd, camera* cam,inpu
         glBindVertexArray(rd->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES,39/*sizeof(gameItem->indices)*/,GL_UNSIGNED_INT,0);
         //glDrawElements(GL_LINE_STRIP,sizeof(indices),GL_UNSIGNED_INT,0);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glfwSwapBuffers(window);
 }
 int main(){
@@ -379,9 +400,20 @@ int main(){
         glfwTerminate();
         return -1;
     }
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplOpenGL3_Init();
 
     //----------------------------------------------------------------------------------------- MESH DATA
     float vertices[] = {
@@ -438,6 +470,13 @@ int main(){
         lag += elapsed;
 
         processInputs(window,in,mp);
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+
         int counter = 0;
         double t1 = glfwGetTime();
         while (lag >= SECOND_PER_UPDATE){   // NEED average update time < SECOND_PER_UPDATE 
@@ -450,6 +489,10 @@ int main(){
         << "   SECOND_PER_UPDATE : " << SECOND_PER_UPDATE <<endl;
         render(window,wp,rd,cam,in);
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     delete in;
     delete mp;
