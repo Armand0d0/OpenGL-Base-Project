@@ -71,6 +71,97 @@ glm::vec3 normalize(glm::vec3 v){
     } 
     return v/n;
 }
+struct inputData{
+    glm::vec2 mousePos;
+    float forward;
+    float sideways;
+    float upwards;
+    float running;
+     //hud parameters keys
+    bool key_Z;
+    bool key_V;
+    bool key_E;
+    bool key_B;
+    bool key_N;
+    //hud parameters
+    int wireMode;
+    int showEdges;
+    int showBackSideEdges;
+    int showVertexIndicies;
+    int showNormals;
+} typedef inputData;
+
+inputData* initialInputData(){
+    inputData* in;
+    in = new inputData;
+    in->mousePos = glm::vec2(0.f);
+    in->forward = 0.f;
+    in->sideways = 0.f;
+    in->upwards = 0.f;
+    in->running = 0.f;
+     //hud parameters keys
+    in->key_Z = false;
+    in->key_V = false;
+    in->key_E = false;
+    in->key_B = false;
+    in->key_N = false;
+    //hud parameters
+    in->wireMode = 0;
+    in->showEdges = 0;
+    in->showBackSideEdges = 1;
+    in->showVertexIndicies = 0;
+    in->showNormals = 0;
+
+    return in;
+}
+
+void processInputs(GLFWwindow* window, inputData * in){
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
+            glfwSetWindowShouldClose(window, true);   
+        }
+        
+        double mx,my;
+        glfwGetCursorPos(window,&mx,&my);
+        in->mousePos = glm::vec2((float)mx,(float)my);
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+            in->forward = 1;   
+        }else if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+            in->forward = -1;
+        }else{
+            in->forward = 0;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+            in->sideways = 1;   
+        }else if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+            in->sideways = -1;
+        }else{
+            in->sideways = 0;
+        }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+            in->upwards = 1;   
+        }else if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+            in->upwards = -1;
+        }else{
+            in->upwards = 0;
+        }
+        if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS){
+            in->running = 1;   
+        }else{
+            in->running = 0;
+        } 
+        onePressToggle(window, GLFW_KEY_Z,&(in->key_Z),&(in->wireMode));
+        if(in->wireMode == 0){
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }else{
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
+        onePressToggle(window, GLFW_KEY_V,&(in->key_V),&(in->showVertexIndicies));
+        onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
+        onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
+        onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
+}
+
 int main(){
 
     GLFWwindow* window;
@@ -268,79 +359,22 @@ int main(){
     glm::vec3 camPos = glm::vec3(0.f,0.0f,-2.0f);
     glm::vec2 camAngleRot = glm::vec2(-(0.5f*width)/width,-(0.5f*height)/height);
     glm::vec3 camDir = Z;
+
     float camSpeed = 0.02f;
-    float forward = 0.f;
-    float sideways = 0.f;
-    float upwards = 0.f;
-    float running = 0;
     float runningSpeedFactor = 5.0;
 
-    //hud parameters keys
-    bool key_Z = false;
-    bool key_V = false;
-    bool key_E = false;
-    bool key_B = false;
-    bool key_N = false;
-    //hud parameters
-    int wireMode = 0;
-    int showEdges = 0;
-    int showBackSideEdges = 1;
-    int showVertexIndicies = 0;
-    int showNormals = 0;
+   inputData* in = initialInputData();
 
 
     while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
     {
         //Inputs
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
-            glfwSetWindowShouldClose(window, true);   
-        }
-        
-        double mx,my;
-        glfwGetCursorPos(window,&mx,&my);
-        glm::vec2 mousePos = glm::vec2((float)mx,(float)my);
-
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-            forward = 1;   
-        }else if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-            forward = -1;
-        }else{
-            forward = 0;
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-            sideways = 1;   
-        }else if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-            sideways = -1;
-        }else{
-            sideways = 0;
-        }
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-            upwards = 1;   
-        }else if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-            upwards = -1;
-        }else{
-            upwards = 0;
-        }
-        if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS){
-            running = 1;   
-        }else{
-            running = 0;
-        } 
-        onePressToggle(window, GLFW_KEY_Z,&key_Z,&wireMode);
-        if(wireMode == 0){
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }else{
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            }
-        onePressToggle(window, GLFW_KEY_V,&key_V,&showVertexIndicies);
-        onePressToggle(window, GLFW_KEY_E,&key_E,&showEdges);
-        onePressToggle(window, GLFW_KEY_B,&key_B,&showBackSideEdges);
-        onePressToggle(window, GLFW_KEY_N,&key_N,&showNormals);
+        processInputs(window,in);
 
         float time = glfwGetTime();
 
         //Camera View Setup
-        glm::vec2 camAngleRot = glm::vec2(-(-mousePos.x*mousSensivity.x + 0.5f*width)/width,-(-mousePos.y*mousSensivity.y + 0.5f*height)/height);
+        glm::vec2 camAngleRot = glm::vec2(-(-in->mousePos.x*mousSensivity.x + 0.5f*width)/width,-(-in->mousePos.y*mousSensivity.y + 0.5f*height)/height);
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         viewMatrix = glm::rotate(viewMatrix,camAngleRot.x,Y);
         glm::vec3 camX = rotate3(X,-camAngleRot.x,Y);
@@ -353,18 +387,18 @@ int main(){
 
 
         //Mouvement
-        camPos += normalize(camDir*forward + camX*sideways - Y*upwards)*camSpeed*(1.f+running*(runningSpeedFactor-1.f));
+        camPos += normalize(camDir*in->forward + camX*in->sideways - Y*in->upwards)*camSpeed*(1.f+in->running*(runningSpeedFactor-1.f));
 
         //Render
         //update uniform variables
-        glUniform1f(glGetUniformLocation(shaderProgram, "time"), glfwGetTime());
+        glUniform1f(glGetUniformLocation(shaderProgram, "time"), time);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"viewMatrix"),1,GL_FALSE,glm::value_ptr(viewMatrix));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"projMatrix"),1,GL_FALSE,glm::value_ptr(projMatrix));
         glUniform1f(glGetUniformLocation(shaderProgram,"ratio"),ratio);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showEdges"),showEdges);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showBackSideEdges"),showBackSideEdges);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showNormals"),showNormals);
-        glUniform1i(glGetUniformLocation(shaderProgram,"showVertexIndicies"),showVertexIndicies);
+        glUniform1i(glGetUniformLocation(shaderProgram,"showEdges"),in->showEdges);
+        glUniform1i(glGetUniformLocation(shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
+        glUniform1i(glGetUniformLocation(shaderProgram,"showNormals"),in->showNormals);
+        glUniform1i(glGetUniformLocation(shaderProgram,"showVertexIndicies"),in->showVertexIndicies);
         //Draw
         glClearColor(135./255.,209./255.,235/255.,1.);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -378,7 +412,7 @@ int main(){
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    
+    delete in;
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &buffer);
     glDeleteProgram(shaderProgram);
