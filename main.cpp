@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h>
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -19,6 +20,8 @@
 #define Y1 glm::vec4(0.f,1.f,.0f,1.0f)
 #define Z1 glm::vec4(0.f,.0f,1.0f,1.0f)
 
+#define TARGET_UPS 60.
+#define SECOND_PER_UPDATE 1./TARGET_UPS
 
 using namespace std;
 
@@ -315,11 +318,7 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
 }
 
 void update(inputData* in,windowParams* wp,camera* cam){
-        //Camera orientation
-        cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
-        cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
-        cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
-        cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
+
         //Camera mouvement
         float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
         cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways - Y*in->upwards)*camSpeed;
@@ -327,6 +326,13 @@ void update(inputData* in,windowParams* wp,camera* cam){
 
 
 void render(GLFWwindow* window,windowParams* wp,renderData* rd, camera* cam,inputData* in){
+        
+        //Camera orientation
+        cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
+        cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
+        cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
+        cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
+        
         //camera setup
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
@@ -420,18 +426,31 @@ int main(){
     camera* cam = initCamera(wp);
     renderData* rd = initRenderData(VAO,shaderProgram,numbersTexture);
 
+
+
+    double previous = glfwGetTime();
+    double lag = 0.;
     while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
     {
-        //Inputs
+        double current = glfwGetTime();
+        double elapsed = current - previous;
+        previous = current;
+        lag += elapsed;
+
         processInputs(window,in,mp);
-
-        float time = glfwGetTime();
-        //Update
-        update(in,wp,cam);
-
-        //Render
+        int counter = 0;
+        double t1 = glfwGetTime();
+        while (lag >= SECOND_PER_UPDATE){   // NEED average update time < SECOND_PER_UPDATE 
+            counter++;     
+           update(in,wp,cam);
+           lag-=SECOND_PER_UPDATE;
+        }
+        double t2 = glfwGetTime();
+        cout << "FPS : " << 1./elapsed << "   updates per frame : "<< counter << "  average update time : "<< (counter == 0 ? 0 : (t2-t1)/(float)counter )
+        << "   SECOND_PER_UPDATE : " << SECOND_PER_UPDATE <<endl;
         render(window,wp,rd,cam,in);
     }
+
     delete in;
     delete mp;
     delete wp;
