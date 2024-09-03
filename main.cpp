@@ -123,7 +123,7 @@ struct inputData{
     bool key_E;
     bool key_B;
     bool key_N;
-    bool key_ENTER;
+    bool key_TAB;
     //hud parameters
     bool wireMode;
     bool showEdges;
@@ -146,7 +146,7 @@ inputData* initInputData(){
     in->key_E = false;
     in->key_B = false;
     in->key_N = false;
-    in->key_ENTER = false;
+    in->key_TAB = false;
     //hud parameters
     in->wireMode = 0;
     in->showEdges = 0;
@@ -290,7 +290,7 @@ bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle
     }
     return toggled;
 }
-void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
+void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* cam){
 
     glfwPollEvents();
 
@@ -299,8 +299,6 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     
-    float f = 0.;
-    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
@@ -338,26 +336,30 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
             in->running = 0;
         }
 
+             
+        if(onePressToggle(window, GLFW_KEY_TAB,&(in->key_TAB),&(in->debugMode))){
+            if(in->debugMode){
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }else{
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        }
+        //IMGUI inputs
+        ImGui::Text("Use TAB to enter debug mode");
         if (ImGui::Checkbox("Wire mode",&(in->wireMode))){
             if(in->wireMode){
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }else{
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
-        }        
+        }   
         ImGui::Checkbox("Show vertex indices",&(in->showVertexIndices));
         ImGui::Checkbox("Show edges",&(in->showEdges));
         ImGui::Checkbox("Show back side edges",&(in->showBackSideEdges));
         ImGui::Checkbox("Show normals",&(in->showNormals));
 
-        if(onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode))){
-            if(!in->debugMode){
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            }else{
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
-        }
-        
+        ImGui::SliderFloat("Camera speed",&(cam->speed),0.001,0.1);
+        ImGui::SliderFloat("Camera running speed factor",&(cam->runningSpeedFactor),0.1,10.);
 
         
 }
@@ -430,6 +432,7 @@ int main(){
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
 
@@ -497,7 +500,7 @@ int main(){
         previous = current;
         lag += elapsed;
 
-        processInputs(window,in,mp);
+        processInputs(window,in,mp,cam);
 
         int counter = 0;
         double t1 = glfwGetTime();
@@ -507,9 +510,9 @@ int main(){
            lag-=SECOND_PER_UPDATE;
         }
         double t2 = glfwGetTime();
-            ImGui::Text(" FPS : %f \n updates per frame : %d\n average update time : %f ", 1./elapsed,counter,(counter == 0 ? 0 : (t2-t1)/(float)counter ));
-        //cout << "FPS : " << 1./elapsed << "   updates per frame : "<< counter << "  average update time : "<< (counter == 0 ? 0 : (t2-t1)/(float)counter )
-        //<< "   SECOND_PER_UPDATE : " << SECOND_PER_UPDATE <<endl;
+            ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
+             1./elapsed,counter,(counter == 0 ? 0 : (t2-t1)/(float)counter),SECOND_PER_UPDATE );
+    
         render(window,wp,rd,cam,in);
     }
 
