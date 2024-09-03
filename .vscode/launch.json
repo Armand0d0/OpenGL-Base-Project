@@ -1,0 +1,60 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C++ Launch (Windows)",
+      "type": "cppdbg",
+      "request": "launch",
+      "cwd": "/home/armand/..dev/NewGame",
+      "program": "${workspaceFolder}/a.out",
+      "externalConsole": true,
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      },
+      "visualizerFile": "${workspaceFolder}/imgui.natvis",
+      "showDisplayString": true
+    },
+    {
+      "name": "g++ build and debug active file",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/a.out",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "g++ build active file",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "visualizerFile": "${workspaceFolder}/imgui.natvis"
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "cwd": "/home/armand/..dev/NewGame",
+      "program": "/home/armand/..dev/NewGame/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}

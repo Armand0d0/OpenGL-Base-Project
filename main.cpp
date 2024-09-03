@@ -285,7 +285,6 @@ void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle)
     }else if(*was_pressed){
         *toggle = 1-*toggle;
         *was_pressed = false;
-
     }
 }
 void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
@@ -296,8 +295,11 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
     
+    float f = 0.;
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             glfwSetWindowShouldClose(window, true);   
         }
@@ -338,6 +340,9 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
             }else{
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }
+       /* if (ImGui::Checkbox("Wire mode",*)){
+        ImGui::Text("Save");
+        }*/
         onePressToggle(window, GLFW_KEY_V,&(in->key_V),&(in->showVertexIndicies));
         onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
         onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
@@ -487,8 +492,6 @@ int main(){
 
         processInputs(window,in,mp);
 
-        
-
         int counter = 0;
         double t1 = glfwGetTime();
         while (lag >= SECOND_PER_UPDATE){   // NEED average update time < SECOND_PER_UPDATE 
@@ -497,8 +500,9 @@ int main(){
            lag-=SECOND_PER_UPDATE;
         }
         double t2 = glfwGetTime();
-        cout << "FPS : " << 1./elapsed << "   updates per frame : "<< counter << "  average update time : "<< (counter == 0 ? 0 : (t2-t1)/(float)counter )
-        << "   SECOND_PER_UPDATE : " << SECOND_PER_UPDATE <<endl;
+            ImGui::Text(" FPS : %f \n updates per frame : %d\n average update time : %f ", 1./elapsed,counter,(counter == 0 ? 0 : (t2-t1)/(float)counter ));
+        //cout << "FPS : " << 1./elapsed << "   updates per frame : "<< counter << "  average update time : "<< (counter == 0 ? 0 : (t2-t1)/(float)counter )
+        //<< "   SECOND_PER_UPDATE : " << SECOND_PER_UPDATE <<endl;
         render(window,wp,rd,cam,in);
     }
 
