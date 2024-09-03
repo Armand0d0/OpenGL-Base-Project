@@ -93,23 +93,13 @@ struct windowParams{
     int width;
     int height;
     float ratio;
+    windowParams() : width(1920),height(1080),ratio((float)this->width/(float)this->height) {}
 }typedef windowParams;
-windowParams* initWindowsParams(){
-    windowParams* wp = new windowParams;
-    wp->width = 1920;
-    wp->height = 1080;
-    wp->ratio = (float)wp->width/(float)wp->height;
-    return wp;
-}
 
 struct mouseParams{
     glm::vec2 mouseSensivity;
+    mouseParams() : mouseSensivity(glm::vec2(1.f,1.f)) {}
 }typedef mouseParams;
-mouseParams* initMouseParams(){
-    mouseParams* mp = new mouseParams;
-    mp->mouseSensivity = glm::vec2(1.f,1.f);
-    return mp;
-}
 
 struct inputData{
     glm::vec2 mousePos;
@@ -117,12 +107,6 @@ struct inputData{
     float sideways;
     float upwards;
     float running;
-     //hud parameters keys
-    bool key_Z;
-    bool key_V;
-    bool key_E;
-    bool key_B;
-    bool key_N;
     bool key_TAB;
     //hud parameters
     bool wireMode;
@@ -131,31 +115,22 @@ struct inputData{
     bool showVertexIndices;
     bool showNormals;
     bool debugMode;
+    inputData() : 
+        mousePos(glm::vec2(0.f)),
+        forward(0.f),
+        sideways(0.f),
+        upwards(0.f),
+        running(0.f),
+        key_TAB(false),
+        //hud parameters
+        wireMode(0),
+        showEdges(0),
+        showBackSideEdges(1),
+        showVertexIndices(0),
+        showNormals(0),
+        debugMode(0) {}
 } typedef inputData;
-inputData* initInputData(){
-    inputData* in;
-    in = new inputData;
-    in->mousePos = glm::vec2(0.f);
-    in->forward = 0.f;
-    in->sideways = 0.f;
-    in->upwards = 0.f;
-    in->running = 0.f;
-     //hud parameters keys
-    in->key_Z = false;
-    in->key_V = false;
-    in->key_E = false;
-    in->key_B = false;
-    in->key_N = false;
-    in->key_TAB = false;
-    //hud parameters
-    in->wireMode = 0;
-    in->showEdges = 0;
-    in->showBackSideEdges = 1;
-    in->showVertexIndices = 0;
-    in->showNormals = 0;
-    in->debugMode = 0;
-    return in;
-}
+
 struct camera{
     glm::vec3 position;
     glm::vec2 angleRotation;
@@ -163,30 +138,31 @@ struct camera{
     glm::vec3 relativeZAxis;
     float speed;
     float runningSpeedFactor;
+    void reset(){
+        position = glm::vec3(0.f,0.0f,-2.0f);
+        angleRotation = glm::vec2(0.,0.);
+        relativeZAxis = Z;
+        relativeXAxis = X;
+    }
+    camera() : 
+        position(glm::vec3(0.f,0.0f,-2.0f)),
+        angleRotation(glm::vec2(0.,0.)),
+        relativeZAxis(Z),
+        speed(0.02f),
+        runningSpeedFactor(5.0) {}
 
 }typedef camera;
-camera* initCamera(windowParams* wp){
-    camera* cam = new camera;
-    cam->position = glm::vec3(0.f,0.0f,-2.0f);
-    cam->angleRotation = glm::vec2(0.,0.);
-    cam->relativeZAxis = Z;
-    cam->speed = 0.02f;
-    cam->runningSpeedFactor = 5.0;
-    return cam;
-}
 
 struct renderData{
     unsigned int VAO;
     unsigned int shaderProgram;
     unsigned int texture;
+    renderData(unsigned int VAO,unsigned int shaderProgram,unsigned int texture) : 
+        VAO(VAO),
+        shaderProgram(shaderProgram),
+        texture(texture) {}
 }typedef renderData;
-renderData* initRenderData(unsigned int VAO,unsigned int shaderProgram,unsigned int texture){
-    renderData* rd = new renderData;
-    rd->VAO = VAO;
-    rd->shaderProgram = shaderProgram;
-    rd->texture = texture;
-    return rd;
-}
+
 unsigned int compileShader(const char * fileName,unsigned int shaderType){
     string sourceString = readFile(fileName);
     const char *shaderSource = sourceString.c_str();
@@ -344,6 +320,7 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
+
         //IMGUI inputs
         ImGui::Text("Use TAB to enter debug mode");
         if (ImGui::Checkbox("Wire mode",&(in->wireMode))){
@@ -361,19 +338,23 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
         ImGui::SliderFloat("Camera speed",&(cam->speed),0.001,0.1);
         ImGui::SliderFloat("Camera running speed factor",&(cam->runningSpeedFactor),0.1,10.);
 
+        if(ImGui::Button("Reset camera")){
+            cam->reset();
+        }
+
         
 }
 
 void update(inputData* in, windowParams* wp, camera* cam){
-
         //Camera mouvement
         float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
         cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways - Y*in->upwards)*camSpeed;
+      
 }
 
 
 void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, inputData* in){
-        
+         
         //Camera orientation
         if(!in->debugMode){
             cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
@@ -426,25 +407,14 @@ int main(){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
-    if (!window)
-    {
+    if (!window){
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
-
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-    ImGui_ImplOpenGL3_Init();
+    initIMGUI(window);
 
     //----------------------------------------------------------------------------------------- MESH DATA
     float vertices[] = {
@@ -483,11 +453,11 @@ int main(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);  
 
-    inputData* in = initInputData();
-    mouseParams* mp = initMouseParams();
-    windowParams* wp = initWindowsParams();
-    camera* cam = initCamera(wp);
-    renderData* rd = initRenderData(VAO,shaderProgram,numbersTexture);
+    inputData in = inputData();
+    mouseParams mp = mouseParams();
+    windowParams wp = windowParams();
+    camera cam = camera();
+    renderData rd = renderData(VAO,shaderProgram,numbersTexture); //initRenderData(VAO,shaderProgram,numbersTexture);
 
 
 
@@ -500,31 +470,27 @@ int main(){
         previous = current;
         lag += elapsed;
 
-        processInputs(window,in,mp,cam);
+        processInputs(window,&in,&mp,&cam);
 
         int counter = 0;
         double t1 = glfwGetTime();
         while (lag >= SECOND_PER_UPDATE){   // NEED average update time < SECOND_PER_UPDATE 
             counter++;     
-           update(in,wp,cam);
+           update(&in,&wp,&cam);
            lag-=SECOND_PER_UPDATE;
         }
         double t2 = glfwGetTime();
-            ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
+
+        ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
              1./elapsed,counter,(counter == 0 ? 0 : (t2-t1)/(float)counter),SECOND_PER_UPDATE );
     
-        render(window,wp,rd,cam,in);
+        render(window,&wp,&rd,&cam,&in);
     }
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    delete in;
-    delete mp;
-    delete wp;
-    delete cam;
-    delete rd;
     glDeleteVertexArrays(1, &VAO);
     //glDeleteBuffers(1, &buffer);//TODO : cleanup VAO, VBO EBO 
     glDeleteProgram(shaderProgram);
