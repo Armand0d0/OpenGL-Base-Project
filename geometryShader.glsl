@@ -16,7 +16,7 @@ in VS_OUT {
 
 uniform float time;
 uniform float ratio;
-uniform int showVertexIndicies;
+uniform int showVertexIndices;
 uniform int showNormals;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
@@ -104,7 +104,7 @@ void main() {
        
 
         //rectangle at each corner ( PB : each rectangle is computed as many times as it has adjascent faces)
-        if(showVertexIndicies == 1){ 
+        if(showVertexIndices == 1){ 
             rectangle(0);
             rectangle(1);
             rectangle(2);

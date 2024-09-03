@@ -128,7 +128,7 @@ struct inputData{
     bool wireMode;
     bool showEdges;
     bool showBackSideEdges;
-    bool showVertexIndicies;
+    bool showVertexIndices;
     bool showNormals;
     bool debugMode;
 } typedef inputData;
@@ -151,7 +151,7 @@ inputData* initInputData(){
     in->wireMode = 0;
     in->showEdges = 0;
     in->showBackSideEdges = 1;
-    in->showVertexIndicies = 0;
+    in->showVertexIndices = 0;
     in->showNormals = 0;
     in->debugMode = 0;
     return in;
@@ -345,14 +345,12 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
         }        
-
-        onePressToggle(window, GLFW_KEY_V,&(in->key_V),&(in->showVertexIndicies));
-        onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
-        onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
-        onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
+        ImGui::Checkbox("Show vertex indices",&(in->showVertexIndices));
+        ImGui::Checkbox("Show edges",&(in->showEdges));
+        ImGui::Checkbox("Show back side edges",&(in->showBackSideEdges));
+        ImGui::Checkbox("Show normals",&(in->showNormals));
 
         if(onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode))){
-            ImGui::Text("sqkfjs");
             if(!in->debugMode){
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }else{
@@ -394,7 +392,7 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, i
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showEdges"),in->showEdges);
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showNormals"),in->showNormals);
-        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showVertexIndicies"),in->showVertexIndicies);
+        glUniform1i(glGetUniformLocation(rd->shaderProgram,"showVertexIndices"),in->showVertexIndices);
         glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), glfwGetTime());
         //Draw
         glClearColor(135./255.,209./255.,235/255.,1.);
