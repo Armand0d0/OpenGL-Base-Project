@@ -279,13 +279,16 @@ unsigned int loadTexture(const char* fileName){
     stbi_image_free(data);
     return texture;
 }
-void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle){
+bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle){
+    bool toggled = false;
     if(glfwGetKey(window,key) == GLFW_PRESS){
         *was_pressed = true;
     }else if(*was_pressed){
         *toggle = !*toggle;
         *was_pressed = false;
+        toggled = true;
     }
+    return toggled;
 }
 void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
 
@@ -333,29 +336,32 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
             in->running = 1;   
         }else{
             in->running = 0;
-        } 
-        onePressToggle(window, GLFW_KEY_Z,&(in->key_Z),&(in->wireMode));
-        if(in->wireMode == 0){
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }else{
+        }
+
+        if (ImGui::Checkbox("Wire mode",&(in->wireMode))){
+            if(in->wireMode){
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }else{
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
+        }        
 
         onePressToggle(window, GLFW_KEY_V,&(in->key_V),&(in->showVertexIndicies));
         onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
         onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
         onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
-        if(in->debugMode == 0){
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }else{
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-               onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode));
 
-       /*bool b;
-        if (ImGui::Checkbox("Wire mode",&b)){
-        ImGui::Text("Save");
-        }*/
+        if(onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode))){
+            ImGui::Text("sqkfjs");
+            if(!in->debugMode){
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }else{
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
+        
+
+        
 }
 
 void update(inputData* in, windowParams* wp, camera* cam){
