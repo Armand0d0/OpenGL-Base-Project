@@ -125,12 +125,12 @@ struct inputData{
     bool key_N;
     bool key_ENTER;
     //hud parameters
-    int wireMode;
-    int showEdges;
-    int showBackSideEdges;
-    int showVertexIndicies;
-    int showNormals;
-    int debugMode;
+    bool wireMode;
+    bool showEdges;
+    bool showBackSideEdges;
+    bool showVertexIndicies;
+    bool showNormals;
+    bool debugMode;
 } typedef inputData;
 inputData* initInputData(){
     inputData* in;
@@ -279,11 +279,11 @@ unsigned int loadTexture(const char* fileName){
     stbi_image_free(data);
     return texture;
 }
-void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, int* toggle){
+void onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle){
     if(glfwGetKey(window,key) == GLFW_PRESS){
         *was_pressed = true;
     }else if(*was_pressed){
-        *toggle = 1-*toggle;
+        *toggle = !*toggle;
         *was_pressed = false;
     }
 }
@@ -340,19 +340,22 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp){
             }else{
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }
-       /* if (ImGui::Checkbox("Wire mode",*)){
-        ImGui::Text("Save");
-        }*/
+
         onePressToggle(window, GLFW_KEY_V,&(in->key_V),&(in->showVertexIndicies));
         onePressToggle(window, GLFW_KEY_E,&(in->key_E),&(in->showEdges));
         onePressToggle(window, GLFW_KEY_B,&(in->key_B),&(in->showBackSideEdges));
         onePressToggle(window, GLFW_KEY_N,&(in->key_N),&(in->showNormals));
-        onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode));
         if(in->debugMode == 0){
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }else{
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
+               onePressToggle(window, GLFW_KEY_ENTER,&(in->key_ENTER),&(in->debugMode));
+
+       /*bool b;
+        if (ImGui::Checkbox("Wire mode",&b)){
+        ImGui::Text("Save");
+        }*/
 }
 
 void update(inputData* in, windowParams* wp, camera* cam){
@@ -366,7 +369,7 @@ void update(inputData* in, windowParams* wp, camera* cam){
 void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, inputData* in){
         
         //Camera orientation
-        if(in->debugMode == 0){
+        if(!in->debugMode){
             cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
             cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
             cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
