@@ -267,16 +267,12 @@ bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle
     return toggled;
 }
 void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* cam){
-
     glfwPollEvents();
-
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     
-
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             glfwSetWindowShouldClose(window, true);   
         }
@@ -311,8 +307,6 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
         }else{
             in->running = 0;
         }
-
-             
         if(onePressToggle(window, GLFW_KEY_TAB,&(in->key_TAB),&(in->debugMode))){
             if(in->debugMode){
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -320,7 +314,6 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
-
         //IMGUI inputs
         ImGui::Text("Use TAB to enter debug mode");
         if (ImGui::Checkbox("Wire mode",&(in->wireMode))){
@@ -334,15 +327,11 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
         ImGui::Checkbox("Show edges",&(in->showEdges));
         ImGui::Checkbox("Show back side edges",&(in->showBackSideEdges));
         ImGui::Checkbox("Show normals",&(in->showNormals));
-
         ImGui::SliderFloat("Camera speed",&(cam->speed),0.001,0.1);
         ImGui::SliderFloat("Camera running speed factor",&(cam->runningSpeedFactor),0.1,10.);
-
         if(ImGui::Button("Reset camera")){
             cam->reset();
         }
-
-        
 }
 
 void update(inputData* in, windowParams* wp, camera* cam){
@@ -457,9 +446,7 @@ int main(){
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
-    renderData rd = renderData(VAO,shaderProgram,numbersTexture); //initRenderData(VAO,shaderProgram,numbersTexture);
-
-
+    renderData rd = renderData(VAO,shaderProgram,numbersTexture);
 
     double previous = glfwGetTime();
     double lag = 0.;
