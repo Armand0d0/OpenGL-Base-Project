@@ -4,12 +4,11 @@ in vec2 TexCoord;
 flat in int hudLevel;
 in vec3 baryCoord;
 in vec3 normal;
-
+in vec3 pos3d;
 uniform float time;
 uniform sampler2D numbers;
 uniform int showEdges;
 uniform int showBackSideEdges;
-
 void main(){
 
     gl_FragDepth = gl_FragCoord.z;
@@ -38,7 +37,10 @@ void main(){
             }else{
                 objectColor = vec4(1., .8, .8, 0.0);
             }
-            gl_FragColor = 0.4*objectColor+ lightcolor*lightIntensity*dot(normal,lightDir);
+            /*vec3 toCam = camPos-pos3d;
+            vec3 normalCamSide = dot(toCam,normal) >= 0 ? normal : -normal; // pick the right normal direction*/
+            float angularFactor = max(dot(normal,lightDir),0.);
+            gl_FragColor = 0.4*objectColor + lightcolor*lightIntensity*angularFactor;
         }
 
     }

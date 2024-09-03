@@ -6,7 +6,7 @@ out vec2 TexCoord;
 flat out int hudLevel;
 out vec3 baryCoord;
 out vec3 normal;
-
+out vec3 pos3d;
 
 in VS_OUT {
     vec2 TexCoord;
@@ -18,9 +18,10 @@ uniform float time;
 uniform float ratio;
 uniform int showVertexIndices;
 uniform int showNormals;
+uniform float normalSize;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
-
+uniform vec3 camPos;
 
 void rectangle(int index){
     float size = 0.02;
@@ -66,33 +67,36 @@ void triangleVertex(int index){
     hudLevel = 0;
     TexCoord = gs_in[index].TexCoord;
     baryCoord = vec3(index == 0, index == 1, index == 2);
-    
+    pos3d = gs_in[index].pos3d.xyz;
 	gl_Position = gl_in[index].gl_Position;
 	EmitVertex();
 }
-void showNormal(vec3 n){
+void showNormal(vec3 n,vec4 middle3d){
         
         hudLevel = 2;
-        vec4 middle3d = (gs_in[0].pos3d + gs_in[1].pos3d + gs_in[2].pos3d)/3.;
         gl_Position = projMatrix*viewMatrix*middle3d ;
         EmitVertex();
-        gl_Position = projMatrix*viewMatrix*middle3d + vec4(0.01);
+        gl_Position = projMatrix*viewMatrix*middle3d + vec4(0.01)*normalSize;
         EmitVertex();
-        gl_Position = projMatrix*viewMatrix*(middle3d + vec4(n.x,n.y,n.z,0.)/10.);
+        gl_Position = projMatrix*viewMatrix*(middle3d + vec4(n.x,n.y,n.z,0.)*0.1*normalSize);
         EmitVertex();
         EndPrimitive();
 
 }
 
 void main() { 
-    
+        vec4 middle3d = (gs_in[0].pos3d + gs_in[1].pos3d + gs_in[2].pos3d)/3.;
         normal = normalize(cross(gs_in[1].pos3d.xyz - gs_in[0].pos3d.xyz,gs_in[2].pos3d.xyz - gs_in[0].pos3d.xyz));
         vec3 convexCenter = vec3(0.,0.,0.);
         if(dot(normal,convexCenter-gs_in[0].pos3d.xyz) > 0.){
-            normal = - normal;
+            //normal = - normal;
         }
+        // pick the right normal direction
+        vec3 toCam = camPos-middle3d.xyz;//which vertex ?
+        normal = dot(toCam,normal) >= 0 ? normal : -normal;
+
         if(showNormals == 1){
-            showNormal(normal);
+            showNormal(normal,middle3d);
         }
 
         //identity triangle

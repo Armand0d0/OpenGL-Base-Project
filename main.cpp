@@ -114,6 +114,7 @@ struct inputData{
     bool showBackSideEdges;
     bool showVertexIndices;
     bool showNormals;
+    float normalSize;
     bool debugMode;
     inputData() : 
         mousePos(glm::vec2(0.f)),
@@ -128,6 +129,7 @@ struct inputData{
         showBackSideEdges(1),
         showVertexIndices(0),
         showNormals(0),
+        normalSize(1.),
         debugMode(0) {}
 } typedef inputData;
 
@@ -139,13 +141,13 @@ struct camera{
     float speed;
     float runningSpeedFactor;
     void reset(){
-        position = glm::vec3(0.f,0.0f,-2.0f);
+        position = glm::vec3(0.f, 1.0f, 2.0f);
         angleRotation = glm::vec2(0.,0.);
         relativeZAxis = Z;
         relativeXAxis = X;
     }
     camera() : 
-        position(glm::vec3(0.f,0.0f,-2.0f)),
+        position(glm::vec3(0.f, 1.0f, 2.0f)),
         angleRotation(glm::vec2(0.,0.)),
         relativeZAxis(Z),
         speed(0.02f),
@@ -155,15 +157,17 @@ struct camera{
 
 struct renderData{
     unsigned int VAO;
+    unsigned int VAO2;
     unsigned int shaderProgram;
     unsigned int texture;
-    renderData(unsigned int VAO,unsigned int shaderProgram,unsigned int texture) : 
+    renderData(unsigned int VAO, unsigned int VAO2, unsigned int shaderProgram, unsigned int texture) : 
         VAO(VAO),
+        VAO2(VAO2),
         shaderProgram(shaderProgram),
         texture(texture) {}
 }typedef renderData;
 
-unsigned int compileShader(const char * fileName,unsigned int shaderType){
+unsigned int compileShader(const char * fileName, unsigned int shaderType){
     string sourceString = readFile(fileName);
     const char *shaderSource = sourceString.c_str();
     unsigned int shader;
@@ -289,9 +293,9 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
             in->forward = 0;
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-            in->sideways = 1;   
+            in->sideways = -1;   
         }else if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-            in->sideways = -1;
+            in->sideways = 1;
         }else{
             in->sideways = 0;
         }
@@ -327,6 +331,7 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
         ImGui::Checkbox("Show edges",&(in->showEdges));
         ImGui::Checkbox("Show back side edges",&(in->showBackSideEdges));
         ImGui::Checkbox("Show normals",&(in->showNormals));
+        ImGui::SliderFloat("Normal size",&(in->normalSize),0.5,10.);
         ImGui::SliderFloat("Camera speed",&(cam->speed),0.001,0.1);
         ImGui::SliderFloat("Camera running speed factor",&(cam->runningSpeedFactor),0.1,10.);
         if(ImGui::Button("Reset camera")){
@@ -337,7 +342,7 @@ void processInputs(GLFWwindow* window, inputData * in,mouseParams* mp,camera* ca
 void update(inputData* in, windowParams* wp, camera* cam){
         //Camera mouvement
         float camSpeed = cam->speed*(1.f+in->running*(cam->runningSpeedFactor-1.f));
-        cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways - Y*in->upwards)*camSpeed;
+        cam->position += normalize(cam->relativeZAxis*in->forward + cam->relativeXAxis*in->sideways + Y*in->upwards)*camSpeed;
       
 }
 
@@ -348,14 +353,14 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, i
         if(!in->debugMode){
             cam->angleRotation= glm::vec2(-(-in->mousePos.x + 0.5f*wp->width)/wp->width,-(-in->mousePos.y + 0.5f*wp->height)/wp->height);
             cam->relativeXAxis = rotate3(X,-cam->angleRotation.x,Y);
-            cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(-90.0),Y);
+            cam->relativeZAxis = rotate3(cam->relativeXAxis,glm::radians(90.0),Y);
             cam->relativeZAxis = rotate3(cam->relativeZAxis,-cam->angleRotation.y,cam->relativeXAxis);
         }
         //camera setup
         glm::mat4 viewMatrix = glm::mat4(1.0f);
         viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.x,Y);
         viewMatrix = glm::rotate(viewMatrix,cam->angleRotation.y,cam->relativeXAxis);
-        viewMatrix = glm::translate(viewMatrix,cam->position);
+        viewMatrix = glm::translate(viewMatrix,-cam->position);
         glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f),wp->ratio,0.0001f,100.0f);
         //update uniform variables
         glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram,"viewMatrix"),1,GL_FALSE,glm::value_ptr(viewMatrix));
@@ -364,7 +369,9 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, i
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showEdges"),in->showEdges);
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showBackSideEdges"),in->showBackSideEdges);
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showNormals"),in->showNormals);
+        glUniform1f(glGetUniformLocation(rd->shaderProgram,"normalSize"),in->normalSize);
         glUniform1i(glGetUniformLocation(rd->shaderProgram,"showVertexIndices"),in->showVertexIndices);
+        glUniform3fv(glGetUniformLocation(rd->shaderProgram,"camPos"),1,glm::value_ptr(cam->position));
         glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), glfwGetTime());
         //Draw
         glClearColor(135./255.,209./255.,235/255.,1.);
@@ -374,6 +381,8 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, i
         glUseProgram(rd->shaderProgram);
         glBindVertexArray(rd->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES,39/*sizeof(gameItem->indices)*/,GL_UNSIGNED_INT,0);
+        glBindVertexArray(rd->VAO2);
+        glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
         //glDrawElements(GL_LINE_STRIP,sizeof(indices),GL_UNSIGNED_INT,0);
 
         ImGui::Render();
@@ -433,10 +442,21 @@ int main(){
         0, 4, 7,//*/
 
     };  
+    float vertices2[] = {
+        10, 0, 10,    1, 1,
+        10, 0, -10,   1, 0,
+        -10, 0, 10,   0, 1,
+        -10, 0, -10,  0, 0
+    };
+    unsigned int indices2[] = {
+        0, 1, 2,
+        1, 2, 3,
+    };
     //-----------------------------------------------------------------------------------------
 
     unsigned int shaderProgram = buildShaderProgram();
     unsigned int VAO = loadMesh(vertices,sizeof(vertices),indices,sizeof(indices));
+    unsigned int VAO2 = loadMesh(vertices2,sizeof(vertices2),indices2,sizeof(indices2));
     unsigned int numbersTexture = loadTexture("screen.png");
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -446,7 +466,7 @@ int main(){
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
-    renderData rd = renderData(VAO,shaderProgram,numbersTexture);
+    renderData rd = renderData(VAO,VAO2,shaderProgram,numbersTexture);
 
     double previous = glfwGetTime();
     double lag = 0.;
