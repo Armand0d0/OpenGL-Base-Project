@@ -4,7 +4,7 @@ in vec2 TexCoord;
 flat in int hudLevel;
 in vec3 baryCoord;
 in vec3 normal;
-in vec3 pos3d;
+
 uniform float time;
 uniform sampler2D numbers;
 uniform int showEdges;
@@ -27,18 +27,17 @@ void main(){
             }
         }else{
 
-            vec3 lightPos = vec3(3.*cos(time),3.,3.*sin(time));
+            vec3 lightPos = vec3(3.,0.2,3.);
             vec3 lightDir = normalize(lightPos);
             vec4 lightcolor = vec4(1.0);
-            float lightIntensity = 0.25;
+            float lightIntensity = 1.;
             vec4 objectColor;
             if(true){
                 objectColor = texture(numbers,TexCoord);
             }else{
                 objectColor = vec4(1., .8, .8, 0.0);
             }
-            /*vec3 toCam = camPos-pos3d;
-            vec3 normalCamSide = dot(toCam,normal) >= 0 ? normal : -normal; // pick the right normal direction*/
+            
             float angularFactor = max(dot(normal,lightDir),0.);
             gl_FragColor = 0.4*objectColor + lightcolor*lightIntensity*angularFactor;
         }

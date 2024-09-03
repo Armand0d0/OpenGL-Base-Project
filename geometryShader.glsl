@@ -6,7 +6,6 @@ out vec2 TexCoord;
 flat out int hudLevel;
 out vec3 baryCoord;
 out vec3 normal;
-out vec3 pos3d;
 
 in VS_OUT {
     vec2 TexCoord;
@@ -67,7 +66,7 @@ void triangleVertex(int index){
     hudLevel = 0;
     TexCoord = gs_in[index].TexCoord;
     baryCoord = vec3(index == 0, index == 1, index == 2);
-    pos3d = gs_in[index].pos3d.xyz;
+
 	gl_Position = gl_in[index].gl_Position;
 	EmitVertex();
 }
@@ -87,12 +86,9 @@ void showNormal(vec3 n,vec4 middle3d){
 void main() { 
         vec4 middle3d = (gs_in[0].pos3d + gs_in[1].pos3d + gs_in[2].pos3d)/3.;
         normal = normalize(cross(gs_in[1].pos3d.xyz - gs_in[0].pos3d.xyz,gs_in[2].pos3d.xyz - gs_in[0].pos3d.xyz));
-        vec3 convexCenter = vec3(0.,0.,0.);
-        if(dot(normal,convexCenter-gs_in[0].pos3d.xyz) > 0.){
-            //normal = - normal;
-        }
+        
         // pick the right normal direction
-        vec3 toCam = camPos-middle3d.xyz;//which vertex ?
+        vec3 toCam = camPos-middle3d.xyz;
         normal = dot(toCam,normal) >= 0 ? normal : -normal;
 
         if(showNormals == 1){
