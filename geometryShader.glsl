@@ -18,6 +18,7 @@ uniform float ratio;
 uniform int showVertexIndices;
 uniform int showNormals;
 uniform float normalSize;
+uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 uniform vec3 camPos;
@@ -73,11 +74,11 @@ void triangleVertex(int index){
 void showNormal(vec3 n,vec4 middle3d){
         
         hudLevel = 2;
-        gl_Position = projMatrix*viewMatrix*middle3d ;
+        gl_Position = projMatrix*viewMatrix*modelMatrix*middle3d ;
         EmitVertex();
-        gl_Position = projMatrix*viewMatrix*middle3d + vec4(0.01)*normalSize;
+        gl_Position = projMatrix*viewMatrix*modelMatrix*middle3d + vec4(0.01)*normalSize;
         EmitVertex();
-        gl_Position = projMatrix*viewMatrix*(middle3d + vec4(n.x,n.y,n.z,0.)*0.1*normalSize);
+        gl_Position = projMatrix*viewMatrix*modelMatrix*(middle3d + vec4(n.x,n.y,n.z,0.)*0.1*normalSize);
         EmitVertex();
         EndPrimitive();
 

@@ -3,18 +3,22 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include "glad/glad.h"
 
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
+
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+
 #include "stb_image.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+#include "gameItem.h"
 
 #define X glm::vec3(1.f,.0f,.0f)
 #define Y glm::vec3(0.f,1.f,.0f)
@@ -136,10 +140,12 @@ struct gameState {
     long int tick;
     bool isGamePaused;
     bool nextStep;
+    gameItem* gameItems;
+    int gameItemCount;
     float getIngameTime() {
         return (float)this->tick * SECOND_PER_UPDATE;
     }
-    gameState() :
+    gameState(gameItem* gameItems, int gameItemCount) :
         mousePos(glm::vec2(0.f)),
         forward(0.f),
         sideways(0.f),
@@ -157,7 +163,9 @@ struct gameState {
         speedOfTime(1.),
         tick(0),
         isGamePaused(false),
-        nextStep(false) {}
+        nextStep(false),
+        gameItems(gameItems),
+        gameItemCount(gameItemCount) {}
 } typedef gameState;
 
 struct camera {
@@ -238,53 +246,8 @@ unsigned int buildShaderProgram() {
     glDeleteShader(fragmentShader);
     return shaderProgram;
 }
-unsigned int loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount) {
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertexCount, vertices, GL_STATIC_DRAW);
 
 
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount, indices, GL_STATIC_DRAW);
-
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    return VAO;
-}
-unsigned int loadTexture(const char* fileName) {
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int texWidth, texHeight, nrChannels;
-    unsigned char* data = stbi_load(fileName, &texWidth, &texHeight, &nrChannels, 0);
-
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
-    return texture;
-}
 bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle) {
     bool toggled = false;
     if (glfwGetKey(window, key) == GLFW_PRESS) {
@@ -372,6 +335,19 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
     ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
 
+    ImGui::SliderFloat("Cube scale x", &(gs->gameItems[0].scale.x), 0.1, 10);
+    ImGui::SliderFloat("Cube scale y", &(gs->gameItems[0].scale.y), 0.1, 10);
+    ImGui::SliderFloat("Cube scale z", &(gs->gameItems[0].scale.z), 0.1, 10);
+
+    ImGui::SliderFloat("Cube position x", &(gs->gameItems[0].position.x), -10, 10);
+    ImGui::SliderFloat("Cube position y", &(gs->gameItems[0].position.y), -10, 10);
+    ImGui::SliderFloat("Cube position z", &(gs->gameItems[0].position.z), -10, 10);
+
+    ImGui::SliderFloat("Cube rotation axis x", &(gs->gameItems[0].rotationAxis.x), -1., 1.);
+    ImGui::SliderFloat("Cube rotation axis y", &(gs->gameItems[0].rotationAxis.y), -1., 1.);
+    ImGui::SliderFloat("Cube rotation axis z", &(gs->gameItems[0].rotationAxis.z), -1., 1.);
+    ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[0].rotationAngle), -M_PI, M_PI);
+
     if (!gs->isGamePaused && ImGui::Button("Pause")) {
         gs->isGamePaused = true;
     }
@@ -390,6 +366,7 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
 }
 
 void update(gameState* gs, windowParams* wp, camera* cam) {
+
     //Camera mouvement
     float camSpeed = cam->speed * (1.f + gs->running * (cam->runningSpeedFactor - 1.f));
     cam->position += normalize(cam->relativeZAxis * gs->forward + cam->relativeXAxis * gs->sideways + Y * gs->upwards) * camSpeed;
@@ -397,7 +374,7 @@ void update(gameState* gs, windowParams* wp, camera* cam) {
 }
 
 
-void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, gameState* gs) {
+void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameItemCount, camera* cam, gameState* gs, unsigned int shaderProgram) {
 
     //Camera orientation
     if (!gs->debugMode) {
@@ -413,33 +390,40 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, g
     viewMatrix = glm::translate(viewMatrix, -cam->position);
     glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f), wp->ratio, 0.0001f, 100.0f);
     //update uniform variables
-    glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-    glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
-    glUniform1f(glGetUniformLocation(rd->shaderProgram, "ratio"), wp->ratio);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showEdges"), gs->showEdges);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showBackSideEdges"), gs->showBackSideEdges);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showNormals"), gs->showNormals);
-    glUniform1f(glGetUniformLocation(rd->shaderProgram, "normalSize"), gs->normalSize);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
-    glUniform3fv(glGetUniformLocation(rd->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
-    glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), gs->getIngameTime());
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
+    glUniform1f(glGetUniformLocation(shaderProgram, "ratio"), wp->ratio);
+    glUniform1i(glGetUniformLocation(shaderProgram, "showEdges"), gs->showEdges);
+    glUniform1i(glGetUniformLocation(shaderProgram, "showBackSideEdges"), gs->showBackSideEdges);
+    glUniform1i(glGetUniformLocation(shaderProgram, "showNormals"), gs->showNormals);
+    glUniform1f(glGetUniformLocation(shaderProgram, "normalSize"), gs->normalSize);
+    glUniform1i(glGetUniformLocation(shaderProgram, "showVertexIndices"), gs->showVertexIndices);
+    glUniform3fv(glGetUniformLocation(shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
+    glUniform1f(glGetUniformLocation(shaderProgram, "time"), gs->getIngameTime());
     //Draw
     glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shaderProgram);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, rd->texture);
-    glUseProgram(rd->shaderProgram);
-    glBindVertexArray(rd->VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-    glDrawElements(GL_TRIANGLES, 39/*sizeof(gameItem->indices)*/, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(rd->VAO2);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    //glDrawElements(GL_LINE_STRIP,sizeof(indices),GL_UNSIGNED_INT,0);
+
+    for (int i = 0; i < gameItemCount; i++) {
+        glm::mat4 modelMatrix = glm::mat4(1.0);
+        modelMatrix = glm::translate(modelMatrix, -gameItems[i].position);
+        modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
+        modelMatrix = glm::scale(modelMatrix, gameItems[i].scale);
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        glBindTexture(GL_TEXTURE_2D, gameItems[i].texture);
+        glBindVertexArray(gameItems[i].VAO);
+        glDrawElements(GL_TRIANGLES, gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     glfwSwapBuffers(window);
 }
+
 int main() {
     GLFWwindow* window;
     int width = 1920, height = 1080;
@@ -489,23 +473,27 @@ int main() {
     //-----------------------------------------------------------------------------------------
 
     unsigned int shaderProgram = buildShaderProgram();
-    unsigned int VAO = loadMesh(vertices, sizeof(vertices), indices, sizeof(indices));
-    unsigned int VAO2 = loadMesh(vertices2, sizeof(vertices2), indices2, sizeof(indices2));
-    unsigned int numbersTexture = loadTexture("screen.png");
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
 
-    gameState gs = gameState();
+
+    gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "textures/Carre.png");
+    gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "textures/damier.png");
+    int gameItemCount = 2;
+    gameItem gameItems[] = { cube, floor };
+
+    gameState gs = gameState(gameItems, gameItemCount);
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
-    renderData rd = renderData(VAO, VAO2, shaderProgram, numbersTexture);
+
+
 
     double previous = glfwGetTime();
     double lag = 0.;
-    while (!glfwWindowShouldClose(window))  //------------------------------------------------------------------------------------------LOOP
-    {
+    while (!glfwWindowShouldClose(window)) { //------------------------------------------------------------------------------------------LOOP
+
         double current = glfwGetTime();
         double elapsed = current - previous;
         previous = current;
@@ -527,14 +515,14 @@ int main() {
         ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
             1. / elapsed, counter, (counter == 0 ? 0 : (t2 - t1) / (float)counter), SECOND_PER_UPDATE);
 
-        render(window, &wp, &rd, &cam, &gs);
+        render(window, &wp, gameItems, gameItemCount, &cam, &gs, shaderProgram);
     }
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    glDeleteVertexArrays(1, &VAO);
+    //glDeleteVertexArrays(1, &VAO);
     //glDeleteBuffers(1, &buffer); 
     glDeleteProgram(shaderProgram);
     glfwTerminate();

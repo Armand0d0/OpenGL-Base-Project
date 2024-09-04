@@ -14,14 +14,10 @@ void main(){
     gl_FragDepth = gl_FragCoord.z;
 
     if(hudLevel == 0){
-        float wireDistance = 0.002/gl_FragCoord.w;
+        float wireDistance = 0.002;///gl_FragCoord.w;
         bool showWire = (baryCoord.x < wireDistance || baryCoord.y < wireDistance || baryCoord.z < wireDistance);
         if(showWire && showEdges == 1){
             gl_FragColor =  vec4(0., 1.0, 0.0, 0.0);
-            /*float epsilon = wireDistance;
-            if(abs(baryCoord.x-wireDistance)< epsilon || abs(baryCoord.y-wireDistance)< epsilon || abs(baryCoord.z-wireDistance)< epsilon ){
-                gl_FragColor = vec4(1.);
-            }*/
             if(showBackSideEdges == 1){
                 gl_FragDepth = 0.0001;
             }
@@ -30,7 +26,7 @@ void main(){
             vec3 lightPos = vec3(3.*cos(time),0.2,3.*sin(time));
             vec3 lightDir = normalize(lightPos);
             vec4 lightcolor = vec4(1.0);
-            float lightIntensity = 1.;
+            float lightIntensity = .4;
             vec4 objectColor;
             if(true){
                 objectColor = texture(numbers,TexCoord);

@@ -2,9 +2,8 @@
 
 
 TODO:   
--set debug params : lightpos, gameitem, timeSpeed (coherent with gameloop ?)
--normals
 -gameItem class
+-set debug params : lightpos, gameitem, fov
 -cleanup VAO, VBO EBO 
 -edge shadow issue
 -shadows ?
