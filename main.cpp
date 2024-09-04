@@ -134,6 +134,11 @@ struct gameState {
     bool debugMode;
     float speedOfTime;
     long int tick;
+    bool isGamePaused;
+    bool nextStep;
+    float getIngameTime() {
+        return (float)this->tick * SECOND_PER_UPDATE;
+    }
     gameState() :
         mousePos(glm::vec2(0.f)),
         forward(0.f),
@@ -150,7 +155,9 @@ struct gameState {
         normalSize(1.),
         debugMode(0),
         speedOfTime(1.),
-        tick(0) {}
+        tick(0),
+        isGamePaused(false),
+        nextStep(false) {}
 } typedef gameState;
 
 struct camera {
@@ -365,6 +372,18 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
     ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
 
+    if (!gs->isGamePaused && ImGui::Button("Pause")) {
+        gs->isGamePaused = true;
+    }
+    if (gs->isGamePaused) {
+        if (ImGui::Button("Play")) {
+            gs->isGamePaused = false;
+        }
+        if (ImGui::Button("Next")) {
+            gs->nextStep = true;
+        }
+    }
+
     if (ImGui::Button("Reset camera")) {
         cam->reset();
     }
@@ -403,7 +422,7 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, g
     glUniform1f(glGetUniformLocation(rd->shaderProgram, "normalSize"), gs->normalSize);
     glUniform1i(glGetUniformLocation(rd->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
     glUniform3fv(glGetUniformLocation(rd->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
-    glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), glfwGetTime());
+    glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), gs->getIngameTime());
     //Draw
     glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -477,7 +496,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
 
-    gameState gs= gameState();
+    gameState gs = gameState();
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
@@ -495,12 +514,13 @@ int main() {
         processInputs(window, &gs, &mp, &cam);
 
         int counter = 0;
-        double t1 = glfwGetTime();
-        while (lag >= SECOND_PER_UPDATE && gs.speedOfTime > 0) {   // NEED average update time < SECOND_PER_UPDATE 
+        double t1 = glfwGetTime();   // NEED average update time < SECOND_PER_UPDATE 
+        while ((lag >= SECOND_PER_UPDATE && gs.speedOfTime > 0 && !gs.isGamePaused) || (gs.isGamePaused && gs.nextStep)) {
             counter++;
             gs.tick++;
             update(&gs, &wp, &cam);
             lag -= SECOND_PER_UPDATE / gs.speedOfTime;
+            gs.nextStep = false;
         }
         double t2 = glfwGetTime();
 

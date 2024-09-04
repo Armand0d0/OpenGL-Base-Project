@@ -27,7 +27,7 @@ void main(){
             }
         }else{
 
-            vec3 lightPos = vec3(3.,0.2,3.);
+            vec3 lightPos = vec3(3.*cos(time),0.2,3.*sin(time));
             vec3 lightDir = normalize(lightPos);
             vec4 lightcolor = vec4(1.0);
             float lightIntensity = 1.;
