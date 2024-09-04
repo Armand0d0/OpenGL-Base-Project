@@ -101,7 +101,7 @@ void initIMGUI(GLFWwindow* window) {
 
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chagsto existing ones.
     ImGui_ImplOpenGL3_Init();
 }
 
@@ -117,7 +117,7 @@ struct mouseParams {
     mouseParams() : mouseSensivity(glm::vec2(1.f, 1.f)) {}
 }typedef mouseParams;
 
-struct inputData {
+struct gameState {
     glm::vec2 mousePos;
     float forward;
     float sideways;
@@ -132,7 +132,9 @@ struct inputData {
     bool showNormals;
     float normalSize;
     bool debugMode;
-    inputData() :
+    float speedOfTime;
+    long int tick;
+    gameState() :
         mousePos(glm::vec2(0.f)),
         forward(0.f),
         sideways(0.f),
@@ -146,8 +148,10 @@ struct inputData {
         showVertexIndices(0),
         showNormals(0),
         normalSize(1.),
-        debugMode(0) {}
-} typedef inputData;
+        debugMode(0),
+        speedOfTime(1.),
+        tick(0) {}
+} typedef gameState;
 
 struct camera {
     glm::vec3 position;
@@ -286,7 +290,7 @@ bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle
     }
     return toggled;
 }
-void processInputs(GLFWwindow* window, inputData* in, mouseParams* mp, camera* cam) {
+void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* cam) {
     glfwPollEvents();
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -299,43 +303,43 @@ void processInputs(GLFWwindow* window, inputData* in, mouseParams* mp, camera* c
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    in->mousePos = glm::vec2((float)mx * mp->mouseSensivity.x, (float)my * mp->mouseSensivity.x);
+    gs->mousePos = glm::vec2((float)mx * mp->mouseSensivity.x, (float)my * mp->mouseSensivity.x);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        in->forward = 1;
+        gs->forward = 1;
     }
     else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        in->forward = -1;
+        gs->forward = -1;
     }
     else {
-        in->forward = 0;
+        gs->forward = 0;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        in->sideways = -1;
+        gs->sideways = -1;
     }
     else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        in->sideways = 1;
+        gs->sideways = 1;
     }
     else {
-        in->sideways = 0;
+        gs->sideways = 0;
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        in->upwards = 1;
+        gs->upwards = 1;
     }
     else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        in->upwards = -1;
+        gs->upwards = -1;
     }
     else {
-        in->upwards = 0;
+        gs->upwards = 0;
     }
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
-        in->running = 1;
+        gs->running = 1;
     }
     else {
-        in->running = 0;
+        gs->running = 0;
     }
-    if (onePressToggle(window, GLFW_KEY_TAB, &(in->key_TAB), &(in->debugMode))) {
-        if (in->debugMode) {
+    if (onePressToggle(window, GLFW_KEY_TAB, &(gs->key_TAB), &(gs->debugMode))) {
+        if (gs->debugMode) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
         else {
@@ -344,39 +348,41 @@ void processInputs(GLFWwindow* window, inputData* in, mouseParams* mp, camera* c
     }
     //IMGUI inputs
     ImGui::Text("Use TAB to enter debug mode");
-    if (ImGui::Checkbox("Wire mode", &(in->wireMode))) {
-        if (in->wireMode) {
+    if (ImGui::Checkbox("Wire mode", &(gs->wireMode))) {
+        if (gs->wireMode) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
-    ImGui::Checkbox("Show vertex indices", &(in->showVertexIndices));
-    ImGui::Checkbox("Show edges", &(in->showEdges));
-    ImGui::Checkbox("Show back side edges", &(in->showBackSideEdges));
-    ImGui::Checkbox("Show normals", &(in->showNormals));
-    ImGui::SliderFloat("Normal size", &(in->normalSize), 0.5, 10.);
+    ImGui::Checkbox("Show vertex indices", &(gs->showVertexIndices));
+    ImGui::Checkbox("Show edges", &(gs->showEdges));
+    ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
+    ImGui::Checkbox("Show normals", &(gs->showNormals));
+    ImGui::SliderFloat("Normal size", &(gs->normalSize), 0.5, 10.);
     ImGui::SliderFloat("Camera speed", &(cam->speed), 0.001, 0.1);
     ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
+    ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
+
     if (ImGui::Button("Reset camera")) {
         cam->reset();
     }
 }
 
-void update(inputData* in, windowParams* wp, camera* cam) {
+void update(gameState* gs, windowParams* wp, camera* cam) {
     //Camera mouvement
-    float camSpeed = cam->speed * (1.f + in->running * (cam->runningSpeedFactor - 1.f));
-    cam->position += normalize(cam->relativeZAxis * in->forward + cam->relativeXAxis * in->sideways + Y * in->upwards) * camSpeed;
+    float camSpeed = cam->speed * (1.f + gs->running * (cam->runningSpeedFactor - 1.f));
+    cam->position += normalize(cam->relativeZAxis * gs->forward + cam->relativeXAxis * gs->sideways + Y * gs->upwards) * camSpeed;
 
 }
 
 
-void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, inputData* in) {
+void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, gameState* gs) {
 
     //Camera orientation
-    if (!in->debugMode) {
-        cam->angleRotation = glm::vec2(-(-in->mousePos.x + 0.5f * wp->width) / wp->width, -(-in->mousePos.y + 0.5f * wp->height) / wp->height);
+    if (!gs->debugMode) {
+        cam->angleRotation = glm::vec2(-(-gs->mousePos.x + 0.5f * wp->width) / wp->width, -(-gs->mousePos.y + 0.5f * wp->height) / wp->height);
         cam->relativeXAxis = rotate3(X, -cam->angleRotation.x, Y);
         cam->relativeZAxis = rotate3(cam->relativeXAxis, glm::radians(90.0), Y);
         cam->relativeZAxis = rotate3(cam->relativeZAxis, -cam->angleRotation.y, cam->relativeXAxis);
@@ -391,11 +397,11 @@ void render(GLFWwindow* window, windowParams* wp, renderData* rd, camera* cam, i
     glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
     glUniformMatrix4fv(glGetUniformLocation(rd->shaderProgram, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
     glUniform1f(glGetUniformLocation(rd->shaderProgram, "ratio"), wp->ratio);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showEdges"), in->showEdges);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showBackSideEdges"), in->showBackSideEdges);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showNormals"), in->showNormals);
-    glUniform1f(glGetUniformLocation(rd->shaderProgram, "normalSize"), in->normalSize);
-    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showVertexIndices"), in->showVertexIndices);
+    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showEdges"), gs->showEdges);
+    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showBackSideEdges"), gs->showBackSideEdges);
+    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showNormals"), gs->showNormals);
+    glUniform1f(glGetUniformLocation(rd->shaderProgram, "normalSize"), gs->normalSize);
+    glUniform1i(glGetUniformLocation(rd->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
     glUniform3fv(glGetUniformLocation(rd->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
     glUniform1f(glGetUniformLocation(rd->shaderProgram, "time"), glfwGetTime());
     //Draw
@@ -471,7 +477,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
 
-    inputData in = inputData();
+    gameState gs= gameState();
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
@@ -486,21 +492,22 @@ int main() {
         previous = current;
         lag += elapsed;
 
-        processInputs(window, &in, &mp, &cam);
+        processInputs(window, &gs, &mp, &cam);
 
         int counter = 0;
         double t1 = glfwGetTime();
-        while (lag >= SECOND_PER_UPDATE) {   // NEED average update time < SECOND_PER_UPDATE 
+        while (lag >= SECOND_PER_UPDATE && gs.speedOfTime > 0) {   // NEED average update time < SECOND_PER_UPDATE 
             counter++;
-            update(&in, &wp, &cam);
-            lag -= SECOND_PER_UPDATE;
+            gs.tick++;
+            update(&gs, &wp, &cam);
+            lag -= SECOND_PER_UPDATE / gs.speedOfTime;
         }
         double t2 = glfwGetTime();
 
         ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
             1. / elapsed, counter, (counter == 0 ? 0 : (t2 - t1) / (float)counter), SECOND_PER_UPDATE);
 
-        render(window, &wp, &rd, &cam, &in);
+        render(window, &wp, &rd, &cam, &gs);
     }
 
     ImGui_ImplOpenGL3_Shutdown();
@@ -508,7 +515,7 @@ int main() {
     ImGui::DestroyContext();
 
     glDeleteVertexArrays(1, &VAO);
-    //glDeleteBuffers(1, &buffer);     //TODO : cleanup VAO, VBO EBO 
+    //glDeleteBuffers(1, &buffer); 
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
