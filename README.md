@@ -2,9 +2,11 @@
 
 
 TODO:   
--wireDistance  
--set & organise debug params : lightpos, fov  
--cleanup VAO, VBO EBO  
+-resolve missing edge on the cube maybe GL_LINE_...   
+-resolve show backside edges issue   
+-highlight vertices  
+-set & organise debug params : lightpos, fov , edges color, clear color  
+-cleanup VAO, VBO EBO   
 -Add an .obj file loader  
 -set multiple texture coordinates for each vertex  
 -show rotation axis on hud  

@@ -37,7 +37,7 @@ void main(){
         gl_FragDepth = 000;
     } else if(hudLevel == 2){
         gl_FragColor = vec4(1.,1.,0.,0.);
-        if(showBackSideEdges){
+        if(showBackSideEdges == 1){
         gl_FragDepth = 0.01;
     }
     }
