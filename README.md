@@ -7,5 +7,6 @@ TODO:
 -cleanup VAO, VBO EBO  
 -Add an .obj file loader  
 -set multiple texture coordinates for each vertex  
+-show rotation axis on hud  
 -shadows 
 -adapt window size to the screen  
