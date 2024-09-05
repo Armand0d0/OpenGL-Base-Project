@@ -17,7 +17,7 @@ void main()
     
     vs_out.TexCoord = aTexCoord;
     vs_out.vertexIndex = gl_VertexID;
-    vec4 pos3d = vec4(pos.x, pos.y, pos.z, 1.0);
+    vec4 pos3d = modelMatrix*vec4(pos.x, pos.y, pos.z, 1.0);
     vs_out.pos3d = pos3d;
 
     gl_Position = projMatrix*viewMatrix*modelMatrix*pos3d;

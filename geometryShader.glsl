@@ -5,6 +5,7 @@ layout ( triangle_strip ,max_vertices = 100) out;
 out vec2 TexCoord;
 flat out int hudLevel;
 out vec3 baryCoord;
+out vec3 baryFactor;
 out vec3 normal;
 
 in VS_OUT {
@@ -63,11 +64,17 @@ void rectangle(int index){
 
     EndPrimitive();
 }
+vec3 adjascent(int i){
+    return gs_in[i].pos3d.xyz - gs_in[(i+1)%3].pos3d.xyz;
+}
+vec3 opposite(int i){
+    return gs_in[(i+2)%3].pos3d.xyz - gs_in[(i+1)%3].pos3d.xyz;
+}
 void triangleVertex(int index){
     hudLevel = 0;
     TexCoord = gs_in[index].TexCoord;
+    baryFactor = vec3(abs(dot(adjascent(0),opposite(0))), abs(dot(adjascent(1),opposite(1))), abs(dot(adjascent(2),opposite(2))));
     baryCoord = vec3(index == 0, index == 1, index == 2);
-
 	gl_Position = gl_in[index].gl_Position;
 	EmitVertex();
 }
@@ -101,8 +108,6 @@ void main() {
 		triangleVertex(1);
 		triangleVertex(2);
 		EndPrimitive();
-
-       
 
         //rectangle at each corner ( PB : each rectangle is computed as many times as it has adjascent faces)
         if(showVertexIndices == 1){ 

@@ -123,6 +123,7 @@ struct mouseParams {
 
 struct gameState {
     glm::vec2 mousePos;
+    glm::vec2 lastMousePos;
     float forward;
     float sideways;
     float upwards;
@@ -149,6 +150,7 @@ struct gameState {
     }
     gameState(gameItem* gameItems, int gameItemCount, unsigned int shaderProgram) :
         mousePos(glm::vec2(0.f)),
+        lastMousePos(glm::vec2(0.)),
         forward(0.f),
         sideways(0.f),
         upwards(0.f),
@@ -270,7 +272,7 @@ bool onePressToggle(GLFWwindow* window, int key, bool* was_pressed, bool* toggle
     }
     return toggled;
 }
-void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* cam) {
+void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mouseParams* mp, camera* cam) {
     glfwPollEvents();
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame();
@@ -280,7 +282,17 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+     if (onePressToggle(window, GLFW_KEY_ESCAPE, &(gs->key_ESCAPE), &(gs->debugMode))) {
+        if (gs->debugMode) {
+            gs->lastMousePos = gs->mousePos;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPos(window, gs->lastMousePos.x, gs->lastMousePos.y);
 
+        }
+    }
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
     gs->mousePos = glm::vec2((float)mx * mp->mouseSensivity.x, (float)my * mp->mouseSensivity.x);
@@ -318,14 +330,7 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     else {
         gs->running = 0;
     }
-    if (onePressToggle(window, GLFW_KEY_ESCAPE, &(gs->key_ESCAPE), &(gs->debugMode))) {
-        if (gs->debugMode) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-    }
+   
     //IMGUI inputs
     ImGui::Text("Use TAB to enter debug mode");
     if (ImGui::Checkbox("Wire mode", &(gs->wireMode))) {
@@ -422,9 +427,9 @@ void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameI
 
     for (int i = 0; i < gameItemCount; i++) {
         glm::mat4 modelMatrix = glm::mat4(1.0);
-        modelMatrix = glm::translate(modelMatrix, -gameItems[i].position);
-        modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
         modelMatrix = glm::scale(modelMatrix, gameItems[i].scale);
+        modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
+        modelMatrix = glm::translate(modelMatrix, -gameItems[i].position);
 
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindTexture(GL_TEXTURE_2D, gameItems[i].texture);
@@ -488,14 +493,15 @@ int main() {
 
     unsigned int shaderProgram = buildShaderProgram();
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
-
+   /*glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);*/
 
     gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");
     gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "damier.png");
-    int gameItemCount = 2;
-    gameItem gameItems[] = { cube, floor };
+    int gameItemCount = 1;
+    gameItem gameItems[] = { cube };//, floor };
 
     gameState gs = gameState(gameItems, gameItemCount, shaderProgram);
     mouseParams mp = mouseParams();
@@ -513,7 +519,7 @@ int main() {
         previous = current;
         lag += elapsed;
 
-        processInputs(window, &gs, &mp, &cam);
+        processInputs(window, &wp, &gs, &mp, &cam);
 
         int counter = 0;
         double t1 = glfwGetTime();   // NEED average update time < SECOND_PER_UPDATE 

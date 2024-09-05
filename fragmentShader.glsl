@@ -3,6 +3,7 @@
 in vec2 TexCoord;
 flat in int hudLevel;
 in vec3 baryCoord;
+in vec3 baryFactor;
 in vec3 normal;
 
 uniform float time;
@@ -16,7 +17,7 @@ void main(){
 
     if(hudLevel == 0){
         float wireDistance = 0.002;
-        bool showWire = (baryCoord.x < wireDistance || baryCoord.y < wireDistance || baryCoord.z < wireDistance);
+        bool showWire = (baryCoord.x*baryFactor.x < wireDistance || baryCoord.y*baryFactor.y < wireDistance || baryCoord.z*baryFactor.z < wireDistance);
         if(showWire && showEdges == 1){
             gl_FragColor =  vec4(0., 1.0, 0.0, 0.0);
             if(showBackSideEdges == 1){
