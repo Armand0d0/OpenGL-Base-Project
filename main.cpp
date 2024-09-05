@@ -282,7 +282,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
-     if (onePressToggle(window, GLFW_KEY_ESCAPE, &(gs->key_ESCAPE), &(gs->debugMode))) {
+    if (onePressToggle(window, GLFW_KEY_ESCAPE, &(gs->key_ESCAPE), &(gs->debugMode))) {
         if (gs->debugMode) {
             gs->lastMousePos = gs->mousePos;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -330,7 +330,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     else {
         gs->running = 0;
     }
-   
+
     //IMGUI inputs
     ImGui::Text("Use TAB to enter debug mode");
     if (ImGui::Checkbox("Wire mode", &(gs->wireMode))) {
@@ -361,7 +361,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     ImGui::SliderFloat("Cube rotation axis x", &(gs->gameItems[0].rotationAxis.x), -1., 1.);
     ImGui::SliderFloat("Cube rotation axis y", &(gs->gameItems[0].rotationAxis.y), -1., 1.);
     ImGui::SliderFloat("Cube rotation axis z", &(gs->gameItems[0].rotationAxis.z), -1., 1.);
-    ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[0].rotationAngle), -M_PI, M_PI);
+    ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[0].rotationAngle), -3. * M_PI, 3. * M_PI);
 
     if (!gs->isGamePaused && ImGui::Button("Pause")) {
         gs->isGamePaused = true;
@@ -427,10 +427,11 @@ void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameI
 
     for (int i = 0; i < gameItemCount; i++) {
         glm::mat4 modelMatrix = glm::mat4(1.0);
-        modelMatrix = glm::scale(modelMatrix, gameItems[i].scale);
-        modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
         modelMatrix = glm::translate(modelMatrix, -gameItems[i].position);
+        modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
+        modelMatrix = glm::scale(modelMatrix, gameItems[i].scale);
 
+        // modelMatrix = modelMatrixR * modelMatrixS * modelMatrixT;
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindTexture(GL_TEXTURE_2D, gameItems[i].texture);
         glBindVertexArray(gameItems[i].VAO);
@@ -445,7 +446,7 @@ void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameI
 
 int main() {
     GLFWwindow* window;
-    int width = 1920, height = 1080;
+    int width = 1850, height = 1080;
     window = initWindow(window, width, height, "OpenGL-Base-Project");
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -495,8 +496,8 @@ int main() {
 
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
-   /*glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);*/
+    /*glEnable(GL_CULL_FACE);
+     glCullFace(GL_BACK);*/
 
     gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");
     gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "damier.png");
