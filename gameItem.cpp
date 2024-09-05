@@ -8,13 +8,13 @@ unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsig
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertexCount*sizeof(float), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(float), vertices, GL_STATIC_DRAW);
 
 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount*sizeof(int), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(int), indices, GL_STATIC_DRAW);
 
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -23,7 +23,7 @@ unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsig
     glEnableVertexAttribArray(1);
     return VAO;
 }
- unsigned int gameItem::loadTexture(const char* fileName) {
+unsigned int gameItem::loadTexture(const char* fileName) {
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
@@ -38,13 +38,16 @@ unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsig
     fullFileName += fileName;
     int texWidth, texHeight, nrChannels;
     unsigned char* data = stbi_load(fullFileName.c_str(), &texWidth, &texHeight, &nrChannels, 0);
-
+    unsigned int sourcePixelFormat = GL_RGB;
+    if (nrChannels == 4) {
+        sourcePixelFormat = GL_RGBA;
+    }
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, sourcePixelFormat, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
-        std::cout << "Failed to load texture : "<< fileName << std::endl;
+        std::cout << "Failed to load texture : " << fileName << std::endl;
     }
     stbi_image_free(data);
     return texture;
