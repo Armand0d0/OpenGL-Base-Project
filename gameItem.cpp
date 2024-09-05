@@ -23,7 +23,7 @@ unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsig
     glEnableVertexAttribArray(1);
     return VAO;
 }
-unsigned int gameItem::loadTexture(const char* fileName) {
+ unsigned int gameItem::loadTexture(const char* fileName) {
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
@@ -34,15 +34,17 @@ unsigned int gameItem::loadTexture(const char* fileName) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);// or GL_LINEAR
 
+    string fullFileName = "./textures/";
+    fullFileName += fileName;
     int texWidth, texHeight, nrChannels;
-    unsigned char* data = stbi_load(fileName, &texWidth, &texHeight, &nrChannels, 0);
+    unsigned char* data = stbi_load(fullFileName.c_str(), &texWidth, &texHeight, &nrChannels, 0);
 
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
-        std::cout << "Failed to load texture of gameItem : "<< this->name << std::endl;
+        std::cout << "Failed to load texture : "<< fileName << std::endl;
     }
     stbi_image_free(data);
     return texture;

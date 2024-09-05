@@ -127,7 +127,7 @@ struct gameState {
     float sideways;
     float upwards;
     float running;
-    bool key_TAB;
+    bool key_ESCAPE;
     //hud parameters
     bool wireMode;
     bool showEdges;
@@ -142,16 +142,18 @@ struct gameState {
     bool nextStep;
     gameItem* gameItems;
     int gameItemCount;
+    unsigned int numberTexture;
+    unsigned int shaderProgram;
     float getIngameTime() {
         return (float)this->tick * SECOND_PER_UPDATE;
     }
-    gameState(gameItem* gameItems, int gameItemCount) :
+    gameState(gameItem* gameItems, int gameItemCount, unsigned int shaderProgram) :
         mousePos(glm::vec2(0.f)),
         forward(0.f),
         sideways(0.f),
         upwards(0.f),
         running(0.f),
-        key_TAB(false),
+        key_ESCAPE(false),
         //hud parameters
         wireMode(0),
         showEdges(0),
@@ -160,12 +162,20 @@ struct gameState {
         showNormals(0),
         normalSize(1.),
         debugMode(0),
+        //time control params
         speedOfTime(1.),
         tick(0),
         isGamePaused(false),
         nextStep(false),
+
         gameItems(gameItems),
-        gameItemCount(gameItemCount) {}
+        gameItemCount(gameItemCount),
+        shaderProgram(shaderProgram) {
+        this->numberTexture = gameItem::loadTexture("numbers.png");
+        glUseProgram(this->shaderProgram);
+        glUniform1i(glGetUniformLocation(this->shaderProgram, "numbersTexture"), 0);
+        glUniform1i(glGetUniformLocation(this->shaderProgram, "materialTexture"), 1);
+    }
 } typedef gameState;
 
 struct camera {
@@ -267,7 +277,7 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_END) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
 
@@ -308,7 +318,7 @@ void processInputs(GLFWwindow* window, gameState* gs, mouseParams* mp, camera* c
     else {
         gs->running = 0;
     }
-    if (onePressToggle(window, GLFW_KEY_TAB, &(gs->key_TAB), &(gs->debugMode))) {
+    if (onePressToggle(window, GLFW_KEY_ESCAPE, &(gs->key_ESCAPE), &(gs->debugMode))) {
         if (gs->debugMode) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
@@ -374,7 +384,7 @@ void update(gameState* gs, windowParams* wp, camera* cam) {
 }
 
 
-void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameItemCount, camera* cam, gameState* gs, unsigned int shaderProgram) {
+void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameItemCount, camera* cam, gameState* gs) {
 
     //Camera orientation
     if (!gs->debugMode) {
@@ -390,21 +400,25 @@ void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameI
     viewMatrix = glm::translate(viewMatrix, -cam->position);
     glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f), wp->ratio, 0.0001f, 100.0f);
     //update uniform variables
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
-    glUniform1f(glGetUniformLocation(shaderProgram, "ratio"), wp->ratio);
-    glUniform1i(glGetUniformLocation(shaderProgram, "showEdges"), gs->showEdges);
-    glUniform1i(glGetUniformLocation(shaderProgram, "showBackSideEdges"), gs->showBackSideEdges);
-    glUniform1i(glGetUniformLocation(shaderProgram, "showNormals"), gs->showNormals);
-    glUniform1f(glGetUniformLocation(shaderProgram, "normalSize"), gs->normalSize);
-    glUniform1i(glGetUniformLocation(shaderProgram, "showVertexIndices"), gs->showVertexIndices);
-    glUniform3fv(glGetUniformLocation(shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
-    glUniform1f(glGetUniformLocation(shaderProgram, "time"), gs->getIngameTime());
+    glUseProgram(gs->shaderProgram);
+    glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
+    glUniform1f(glGetUniformLocation(gs->shaderProgram, "ratio"), wp->ratio);
+    glUniform1i(glGetUniformLocation(gs->shaderProgram, "showEdges"), gs->showEdges);
+    glUniform1i(glGetUniformLocation(gs->shaderProgram, "showBackSideEdges"), gs->showBackSideEdges);
+    glUniform1i(glGetUniformLocation(gs->shaderProgram, "showNormals"), gs->showNormals);
+    glUniform1f(glGetUniformLocation(gs->shaderProgram, "normalSize"), gs->normalSize);
+    glUniform1i(glGetUniformLocation(gs->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
+    glUniform3fv(glGetUniformLocation(gs->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
+    glUniform1f(glGetUniformLocation(gs->shaderProgram, "time"), gs->getIngameTime());
+
+
     //Draw
     glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shaderProgram);
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gs->numberTexture);
+    glActiveTexture(GL_TEXTURE1);
 
     for (int i = 0; i < gameItemCount; i++) {
         glm::mat4 modelMatrix = glm::mat4(1.0);
@@ -412,7 +426,7 @@ void render(GLFWwindow* window, windowParams* wp, gameItem* gameItems, int gameI
         modelMatrix = glm::rotate(modelMatrix, gameItems[i].rotationAngle, gameItems[i].rotationAxis);
         modelMatrix = glm::scale(modelMatrix, gameItems[i].scale);
 
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindTexture(GL_TEXTURE_2D, gameItems[i].texture);
         glBindVertexArray(gameItems[i].VAO);
         glDrawElements(GL_TRIANGLES, gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
@@ -478,12 +492,12 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
 
-    gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "textures/Carre.png");
-    gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "textures/damier.png");
+    gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");
+    gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "damier.png");
     int gameItemCount = 2;
     gameItem gameItems[] = { cube, floor };
 
-    gameState gs = gameState(gameItems, gameItemCount);
+    gameState gs = gameState(gameItems, gameItemCount, shaderProgram);
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
@@ -515,7 +529,7 @@ int main() {
         ImGui::Text("FPS : %f \nupdates per frame : %d\naverage update time : %f\nSECOND_PER_UPDATE : %f",
             1. / elapsed, counter, (counter == 0 ? 0 : (t2 - t1) / (float)counter), SECOND_PER_UPDATE);
 
-        render(window, &wp, gameItems, gameItemCount, &cam, &gs, shaderProgram);
+        render(window, &wp, gameItems, gameItemCount, &cam, &gs);
     }
 
     ImGui_ImplOpenGL3_Shutdown();

@@ -6,7 +6,8 @@ in vec3 baryCoord;
 in vec3 normal;
 
 uniform float time;
-uniform sampler2D numbers;
+uniform sampler2D numbersTexture;
+uniform sampler2D materialTexture;
 uniform int showEdges;
 uniform int showBackSideEdges;
 void main(){
@@ -14,7 +15,7 @@ void main(){
     gl_FragDepth = gl_FragCoord.z;
 
     if(hudLevel == 0){
-        float wireDistance = 0.002;///gl_FragCoord.w;
+        float wireDistance = 0.002;
         bool showWire = (baryCoord.x < wireDistance || baryCoord.y < wireDistance || baryCoord.z < wireDistance);
         if(showWire && showEdges == 1){
             gl_FragColor =  vec4(0., 1.0, 0.0, 0.0);
@@ -29,7 +30,7 @@ void main(){
             float lightIntensity = .4;
             vec4 objectColor;
             if(true){
-                objectColor = texture(numbers,TexCoord);
+                objectColor = texture(materialTexture,TexCoord);
             }else{
                 objectColor = vec4(1., .8, .8, 0.0);
             }
@@ -40,7 +41,7 @@ void main(){
 
     }
     else if(hudLevel == 1){
-        gl_FragColor =  texture(numbers,TexCoord);
+        gl_FragColor =  texture(numbersTexture,TexCoord);
         gl_FragDepth = 000;
     } else if(hudLevel == 2){
         gl_FragColor = vec4(1.,1.,0.,0.);

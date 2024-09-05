@@ -36,7 +36,7 @@ public:
     unsigned int VBO;
     unsigned int EBO;
     unsigned int loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount);
-    unsigned int loadTexture(const char* fileName);
+    static unsigned int loadTexture(const char* fileName);
     gameItem(const char* name, float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount, const char* textureFileName);
 
 
