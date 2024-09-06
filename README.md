@@ -3,9 +3,9 @@
 
 TODO:   
 -resolve missing edge on the cube maybe GL_LINE_...   
--resolve show backside edges issue   
+-show backside edges option ? (need to use edges shader program for faces)   
 -highlight vertices  
--set & organise debug params : lightpos, fov , edges color, clear color  
+-set & organise debug params : lightpos, fov , edges color width ?, clear color  
 -cleanup VAO, VBO EBO   
 -Add an .obj file loader  
 -set multiple texture coordinates for each vertex  

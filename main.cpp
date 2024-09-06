@@ -448,6 +448,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
             glUseProgram(gs->shaderProgramEdges);
             glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
             glDrawElements(GL_LINE_STRIP, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
+
         }
     }
 
