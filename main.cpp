@@ -145,12 +145,11 @@ struct gameState {
     int gameItemCount;
     unsigned int numberTexture;
     unsigned int shaderProgram;
-    unsigned int shaderProgramEdges;
     float fov;
     float getIngameTime() {
         return (float)this->tick * SECOND_PER_UPDATE;
     }
-    gameState(gameItem* gameItems, int gameItemCount, unsigned int shaderProgram, unsigned int shaderProgramEdges) :
+    gameState(gameItem* gameItems, int gameItemCount, unsigned int shaderProgram) :
         mousePos(glm::vec2(0.f)),
         lastMousePos(glm::vec2(0.)),
         forward(0.f),
@@ -174,7 +173,6 @@ struct gameState {
         gameItems(gameItems),
         gameItemCount(gameItemCount),
         shaderProgram(shaderProgram),
-        shaderProgramEdges(shaderProgramEdges),
         fov(60.) {
         this->numberTexture = gameItem::loadTexture("numbers.png");
         glUseProgram(this->shaderProgram);
@@ -417,11 +415,6 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
     glUniform3fv(glGetUniformLocation(gs->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
     glUniform1f(glGetUniformLocation(gs->shaderProgram, "time"), gs->getIngameTime());
 
-    glUseProgram(gs->shaderProgramEdges);
-    glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
-    glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
-    glUniform1i(glGetUniformLocation(gs->shaderProgramEdges, "showBackSideEdges"), gs->showBackSideEdges);
-
     //Draw
     glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -435,7 +428,6 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         modelMatrix = glm::rotate(modelMatrix, gs->gameItems[i].rotationAngle, gs->gameItems[i].rotationAxis);
         modelMatrix = glm::scale(modelMatrix, gs->gameItems[i].scale);
 
-        glUseProgram(gs->shaderProgram);
         glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), false);
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindVertexArray(gs->gameItems[i].VAO);
@@ -511,7 +503,6 @@ int main() {
     //-----------------------------------------------------------------------------------------
 
     unsigned int shaderProgram = buildShaderProgram("./vertexShader.glsl", "./fragmentShader.glsl", "./geometryShader.glsl");
-    unsigned int shaderProgramEdges = buildShaderProgram("./vertexShaderEdges.glsl", "./fragmentShaderEdges.glsl");
 
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
@@ -523,7 +514,7 @@ int main() {
     int gameItemCount = 2;
     gameItem gameItems[] = { cube , floor };
 
-    gameState gs = gameState(gameItems, gameItemCount, shaderProgram, shaderProgramEdges);
+    gameState gs = gameState(gameItems, gameItemCount, shaderProgram);
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
