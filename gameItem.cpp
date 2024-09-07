@@ -61,7 +61,8 @@ gameItem::gameItem(const char* name, float* vertices, unsigned int vertexCount, 
     position(glm::vec3(0)),
     scale(glm::vec3(1.)),
     rotationAxis(Y),
-    rotationAngle(0.) {
+    rotationAngle(0.),
+    edgesColor(glm::vec3(1.,0.,1.)) {
 
     this->VAO = gameItem::loadMesh(vertices, vertexCount, indices, indexCount);
     this->texture = gameItem::loadTexture(textureFileName);

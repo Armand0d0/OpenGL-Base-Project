@@ -35,6 +35,7 @@ public:
     unsigned int VAO;
     unsigned int VBO;
     unsigned int EBO;
+    glm::vec3 edgesColor;
     unsigned int loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount);
     static unsigned int loadTexture(const char* fileName);
     gameItem(const char* name, float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount, const char* textureFileName);

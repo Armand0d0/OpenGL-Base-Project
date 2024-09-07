@@ -146,6 +146,7 @@ struct gameState {
     unsigned int numberTexture;
     unsigned int shaderProgram;
     unsigned int shaderProgramEdges;
+    float fov;
     float getIngameTime() {
         return (float)this->tick * SECOND_PER_UPDATE;
     }
@@ -173,7 +174,8 @@ struct gameState {
         gameItems(gameItems),
         gameItemCount(gameItemCount),
         shaderProgram(shaderProgram),
-        shaderProgramEdges(shaderProgramEdges) {
+        shaderProgramEdges(shaderProgramEdges),
+        fov(60.) {
         this->numberTexture = gameItem::loadTexture("numbers.png");
         glUseProgram(this->shaderProgram);
         glUniform1i(glGetUniformLocation(this->shaderProgram, "numbersTexture"), 0);
@@ -353,6 +355,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     ImGui::SliderFloat("Camera speed", &(cam->speed), 0.001, 0.1);
     ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
     ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
+    ImGui::SliderFloat("FOV", &(gs->fov), 0, 180);
 
     ImGui::SliderFloat("Cube scale x", &(gs->gameItems[0].scale.x), 0.1, 10);
     ImGui::SliderFloat("Cube scale y", &(gs->gameItems[0].scale.y), 0.1, 10);
@@ -408,7 +411,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
     viewMatrix = glm::rotate(viewMatrix, cam->angleRotation.x, Y);
     viewMatrix = glm::rotate(viewMatrix, cam->angleRotation.y, cam->relativeXAxis);
     viewMatrix = glm::translate(viewMatrix, -cam->position);
-    glm::mat4 projMatrix = glm::perspective(glm::radians(60.0f), wp->ratio, 0.0001f, 100.0f);
+    glm::mat4 projMatrix = glm::perspective(glm::radians(gs->fov), wp->ratio, 0.0001f, 100.0f);
     //update uniform variables
     glUseProgram(gs->shaderProgram);
     glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
@@ -445,10 +448,16 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
 
         if (gs->showEdges) {
+            if (!gs->wireMode) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
             glUseProgram(gs->shaderProgramEdges);
+            glUniform3fv(glGetUniformLocation(gs->shaderProgramEdges, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
             glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
-            glDrawElements(GL_LINE_STRIP, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
-
+            glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
+            if (!gs->wireMode) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
         }
     }
 
@@ -523,7 +532,6 @@ int main() {
     mouseParams mp = mouseParams();
     windowParams wp = windowParams();
     camera cam = camera();
-
 
 
     double previous = glfwGetTime();

@@ -3,7 +3,7 @@
 
 TODO:   
 -resolve missing edge on the cube maybe GL_LINE_...   
--show backside edges option ? (need to use edges shader program for faces)   
+-show backside edges option ? (need to use edges shader program for faces (maybe with wireframe mode on))   
 -highlight vertices  
 -set & organise debug params : lightpos, fov , edges color width ?, clear color  
 -cleanup VAO, VBO EBO   
