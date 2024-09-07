@@ -11,11 +11,18 @@ uniform sampler2D numbersTexture;
 uniform sampler2D materialTexture;
 uniform int showBackSideEdges;
 uniform int isEdge;
+uniform vec3 edgesColor;
 void main(){
 
     gl_FragDepth = gl_FragCoord.z;
 
     if(hudLevel == 0){
+        if(isEdge == 1){
+            gl_FragColor = vec4(edgesColor.x,edgesColor.y,edgesColor.z,1.);
+            if(showBackSideEdges == 1){
+                gl_FragDepth = 0.01;
+            }
+        }else{
             vec3 lightPos = vec3(3.*cos(time),0.2,3.*sin(time));
             vec3 lightDir = normalize(lightPos);
             vec4 lightcolor = vec4(1.0);
@@ -30,11 +37,6 @@ void main(){
             float angularFactor = max(dot(normal,lightDir),0.);
             gl_FragColor = 0.4*objectColor + lightcolor*lightIntensity*angularFactor;
         
-        if(isEdge == 1){
-            gl_FragColor = vec4(0,0,0,0);
-            if(showBackSideEdges == 1){
-                gl_FragDepth = 0.01;
-            }
         }
     }
     else if(hudLevel == 1){

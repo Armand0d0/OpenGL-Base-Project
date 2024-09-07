@@ -130,7 +130,7 @@ struct gameState {
     float running;
     bool key_ESCAPE;
     //hud parameters
-    bool wireMode;
+    bool showFaces;
     bool showEdges;
     bool showBackSideEdges;
     bool showVertexIndices;
@@ -159,7 +159,7 @@ struct gameState {
         running(0.f),
         key_ESCAPE(false),
         //hud parameters
-        wireMode(0),
+        showFaces(1),
         showEdges(0),
         showBackSideEdges(1),
         showVertexIndices(0),
@@ -339,14 +339,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
 
     //IMGUI inputs
     ImGui::Text("Use TAB to enter debug mode");
-    if (ImGui::Checkbox("Wire mode", &(gs->wireMode))) {
-        if (gs->wireMode) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        }
-        else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-    }
+    ImGui::Checkbox("Show faces", &(gs->showFaces));
     ImGui::Checkbox("Show vertex indices", &(gs->showVertexIndices));
     ImGui::Checkbox("Show edges", &(gs->showEdges));
     ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
@@ -445,27 +438,21 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         glUseProgram(gs->shaderProgram);
         glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), false);
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
-        glBindTexture(GL_TEXTURE_2D, gs->gameItems[i].texture);
         glBindVertexArray(gs->gameItems[i].VAO);
-
-        glEnable(GL_POLYGON_OFFSET_FILL);
-        glPolygonOffset(1.0f, 1.0f);
-        glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
-        glDisable(GL_POLYGON_OFFSET_FILL);
-
+        if (gs->showFaces) {
+            glBindTexture(GL_TEXTURE_2D, gs->gameItems[i].texture);
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(1.0f, 1.0f);
+            glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
         if (gs->showEdges) {
-            if (!gs->wireMode) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            }
-            //glUseProgram(gs->shaderProgramEdges);
-            //glUniform3fv(glGetUniformLocation(gs->shaderProgramEdges, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
-            //glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glUniform3fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
             glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), true);
             glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
-            if (!gs->wireMode) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
         }
     }
 
