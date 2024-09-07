@@ -423,6 +423,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
     glUniform1i(glGetUniformLocation(gs->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
     glUniform3fv(glGetUniformLocation(gs->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
     glUniform1f(glGetUniformLocation(gs->shaderProgram, "time"), gs->getIngameTime());
+
     glUseProgram(gs->shaderProgramEdges);
     glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
     glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "projMatrix"), 1, GL_FALSE, glm::value_ptr(projMatrix));
@@ -442,18 +443,25 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         modelMatrix = glm::scale(modelMatrix, gs->gameItems[i].scale);
 
         glUseProgram(gs->shaderProgram);
+        glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), false);
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindTexture(GL_TEXTURE_2D, gs->gameItems[i].texture);
         glBindVertexArray(gs->gameItems[i].VAO);
+
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.0f, 1.0f);
         glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
+        glDisable(GL_POLYGON_OFFSET_FILL);
 
         if (gs->showEdges) {
             if (!gs->wireMode) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }
-            glUseProgram(gs->shaderProgramEdges);
-            glUniform3fv(glGetUniformLocation(gs->shaderProgramEdges, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
-            glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+            //glUseProgram(gs->shaderProgramEdges);
+            //glUniform3fv(glGetUniformLocation(gs->shaderProgramEdges, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
+            //glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgramEdges, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
+            glUniform3fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
+            glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), true);
             glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
             if (!gs->wireMode) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -10,7 +10,7 @@ uniform float time;
 uniform sampler2D numbersTexture;
 uniform sampler2D materialTexture;
 uniform int showBackSideEdges;
-
+uniform int isEdge;
 void main(){
 
     gl_FragDepth = gl_FragCoord.z;
@@ -30,7 +30,12 @@ void main(){
             float angularFactor = max(dot(normal,lightDir),0.);
             gl_FragColor = 0.4*objectColor + lightcolor*lightIntensity*angularFactor;
         
-
+        if(isEdge == 1){
+            gl_FragColor = vec4(0,0,0,0);
+            if(showBackSideEdges == 1){
+                gl_FragDepth = 0.01;
+            }
+        }
     }
     else if(hudLevel == 1){
         gl_FragColor =  texture(numbersTexture,TexCoord);
