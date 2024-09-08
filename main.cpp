@@ -134,6 +134,7 @@ struct gameState {
     bool showEdges;
     bool showBackSideEdges;
     bool showVertexIndices;
+    bool showVertices;
     bool showNormals;
     float normalSize;
     bool debugMode;
@@ -162,6 +163,7 @@ struct gameState {
         showEdges(0),
         showBackSideEdges(1),
         showVertexIndices(0),
+        showVertices(0),
         showNormals(0),
         normalSize(1.),
         debugMode(0),
@@ -339,6 +341,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     ImGui::Text("Use TAB to enter debug mode");
     ImGui::Checkbox("Show faces", &(gs->showFaces));
     ImGui::Checkbox("Show vertex indices", &(gs->showVertexIndices));
+    ImGui::Checkbox("Show vertices", &(gs->showVertices));
     ImGui::Checkbox("Show edges", &(gs->showEdges));
     ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
     ImGui::Checkbox("Show normals", &(gs->showNormals));
@@ -412,6 +415,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
     glUniform1i(glGetUniformLocation(gs->shaderProgram, "showNormals"), gs->showNormals);
     glUniform1f(glGetUniformLocation(gs->shaderProgram, "normalSize"), gs->normalSize);
     glUniform1i(glGetUniformLocation(gs->shaderProgram, "showVertexIndices"), gs->showVertexIndices);
+    glUniform1i(glGetUniformLocation(gs->shaderProgram, "showVertices"), gs->showVertices);
     glUniform3fv(glGetUniformLocation(gs->shaderProgram, "camPos"), 1, glm::value_ptr(cam->position));
     glUniform1f(glGetUniformLocation(gs->shaderProgram, "time"), gs->getIngameTime());
 
@@ -440,7 +444,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         }
         if (gs->showEdges) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glUniform3fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
+            glUniform4fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
             glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), true);
             glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

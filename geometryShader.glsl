@@ -15,6 +15,7 @@ in VS_OUT {
 uniform float time;
 uniform float ratio;
 uniform int showVertexIndices;
+uniform int showVertices;
 uniform int showNormals;
 uniform float normalSize;
 uniform mat4 modelMatrix;
@@ -22,8 +23,12 @@ uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 uniform vec3 camPos;
 
+
 void rectangle(int index){
-    float size = 0.02;
+    float size = 0.003;
+    if(showVertexIndices == 1){
+        size = 0.02;
+    }
     float cellSize = 0.10;
     int id = gs_in[index].vertexIndex;
     vec4 vertexPos = gl_in[index].gl_Position;
@@ -101,7 +106,7 @@ void main() {
 		EndPrimitive();
 
         //rectangle at each corner ( PB : each rectangle is computed as many times as it has adjascent faces)
-        if(showVertexIndices == 1){ 
+        if(showVertexIndices == 1 || showVertices == 1){ 
             rectangle(0);
             rectangle(1);
             rectangle(2);

@@ -10,15 +10,16 @@ uniform float time;
 uniform sampler2D numbersTexture;
 uniform sampler2D materialTexture;
 uniform int showBackSideEdges;
+uniform int showVertexIndices;
 uniform int isEdge;
-uniform vec3 edgesColor;
+uniform vec4 edgesColor;
 void main(){
 
     gl_FragDepth = gl_FragCoord.z;
 
     if(hudLevel == 0){
         if(isEdge == 1){
-            gl_FragColor = vec4(edgesColor.x,edgesColor.y,edgesColor.z,1.);
+            gl_FragColor = edgesColor*0.7;
             if(showBackSideEdges == 1){
                 gl_FragDepth = 0.01;
             }
@@ -40,8 +41,14 @@ void main(){
         }
     }
     else if(hudLevel == 1){
-        gl_FragColor =  texture(numbersTexture,TexCoord);
-        gl_FragDepth = 000;
+        if(showVertexIndices == 1){
+            gl_FragColor = texture(numbersTexture,TexCoord);
+        }else{
+            gl_FragColor = edgesColor*0.7;
+        }
+        if(showBackSideEdges == 1){
+            gl_FragDepth = 0.00;
+        }    
     } else if(hudLevel == 2){
         gl_FragColor = vec4(1.,1.,0.,0.);
         if(showBackSideEdges == 1){

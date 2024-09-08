@@ -19,6 +19,6 @@ void main()
     vs_out.vertexIndex = gl_VertexID;
     vec4 pos3d = modelMatrix*vec4(pos.x, pos.y, pos.z, 1.0);
     vs_out.pos3d = pos3d;
-
+    gl_PointSize = 33.;
     gl_Position = projMatrix*viewMatrix*pos3d;
 }
