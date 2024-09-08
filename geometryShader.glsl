@@ -36,7 +36,6 @@ void rectangle(int index){
     //setting the rectangle as hud
     hudLevel = 1;
     size*= vertexPos.w; //scale rectangle according to its distance 
-
     vec2 cellPos = vec2(float(id%10),float(id/10));
 
     gl_Position = vertexPos + vec4(-size, -size*ratio, 0.0, 0.0);

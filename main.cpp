@@ -433,6 +433,7 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         modelMatrix = glm::scale(modelMatrix, gs->gameItems[i].scale);
 
         glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), false);
+        glUniform4fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
         glUniformMatrix4fv(glGetUniformLocation(gs->shaderProgram, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
         glBindVertexArray(gs->gameItems[i].VAO);
         if (gs->showFaces) {
@@ -444,7 +445,6 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
         }
         if (gs->showEdges) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glUniform4fv(glGetUniformLocation(gs->shaderProgram, "edgesColor"), 1, glm::value_ptr(gs->gameItems[i].edgesColor));
             glUniform1i(glGetUniformLocation(gs->shaderProgram, "isEdge"), true);
             glDrawElements(GL_TRIANGLES, gs->gameItems[i].indexCount, GL_UNSIGNED_INT, 0);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
