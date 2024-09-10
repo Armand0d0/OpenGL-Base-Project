@@ -556,8 +556,14 @@ int main() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    //glDeleteVertexArrays(1, &VAO);
-    //glDeleteBuffers(1, &buffer); 
+        glDeleteTextures(1,&(gs.numberTexture));
+    for (int i = 0; i < gameItemCount;i++) {
+        glDeleteTextures(1,&(gs.gameItems[i].texture));
+        glDeleteBuffers(1, &(gs.gameItems[i].EBO));
+        glDeleteBuffers(1, &(gs.gameItems[i].VBO));
+        glDeleteVertexArrays(1, &(gs.gameItems[i].VAO));
+    }
+
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;

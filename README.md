@@ -2,7 +2,7 @@
 
 
 TODO:   
--set & organise debug params : lightpos, edges color width ?, clear color  
+-set & organise debug params : lightpos, edges color, clear color  
 -cleanup VAO, VBO EBO   
 -face culling    
 -Add an .obj file loader  

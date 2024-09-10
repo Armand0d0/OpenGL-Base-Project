@@ -1,19 +1,16 @@
 #include "gameItem.h"
 
-unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount) {
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+void gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount) {
+    glGenVertexArrays(1, &this->VAO);
+    glBindVertexArray(this->VAO);
 
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glGenBuffers(1, &this->VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, this->VBO);
     glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(float), vertices, GL_STATIC_DRAW);
 
 
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glGenBuffers(1, &this->EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(int), indices, GL_STATIC_DRAW);
 
 
@@ -21,7 +18,6 @@ unsigned int gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsig
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    return VAO;
 }
 unsigned int gameItem::loadTexture(const char* fileName) {
     unsigned int texture;
@@ -64,6 +60,6 @@ gameItem::gameItem(const char* name, float* vertices, unsigned int vertexCount, 
     rotationAngle(0.),
     edgesColor(glm::vec4(1.,0.,1.,1.)) {
 
-    this->VAO = gameItem::loadMesh(vertices, vertexCount, indices, indexCount);
+    gameItem::loadMesh(vertices, vertexCount, indices, indexCount);
     this->texture = gameItem::loadTexture(textureFileName);
 }
