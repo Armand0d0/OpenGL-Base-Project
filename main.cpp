@@ -148,6 +148,7 @@ struct gameState {
     unsigned int numberTexture;
     unsigned int shaderProgram;
     float fov;
+    glm::vec4 clearColor;
     float getIngameTime() {
         return (float)this->tick * SECOND_PER_UPDATE;
     }
@@ -177,7 +178,8 @@ struct gameState {
         gameItems(gameItems),
         gameItemCount(gameItemCount),
         shaderProgram(shaderProgram),
-        fov(60.) {
+        fov(60.),
+        clearColor(glm::vec4(135. / 255., 209. / 255., 235 / 255., 1.)) {
         this->numberTexture = gameItem::loadTexture("numbers.png");
         glUseProgram(this->shaderProgram);
         glUniform1i(glGetUniformLocation(this->shaderProgram, "numbersTexture"), 0);
@@ -340,56 +342,91 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     }
 
     //IMGUI inputs
-    ImGui::Text("Use TAB to enter debug mode");
-    ImGui::Checkbox("Show faces", &(gs->showFaces));
-    ImGui::Checkbox("Show vertex indices", &(gs->showVertexIndices));
-    ImGui::Checkbox("Show vertices", &(gs->showVertices));
-    ImGui::Checkbox("Show edges", &(gs->showEdges));
-    ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
-    ImGui::Checkbox("Show normals", &(gs->showNormals));
-    if(ImGui::Checkbox("Back Face Culling", &(gs->backFaceCulling))){
-        if(gs->backFaceCulling){
+    ImGui::Text("Use ESCAPE to enter debug mode");
+
+    if (ImGui::TreeNodeEx("Hud")) {
+        ImGui::Checkbox("Show faces", &(gs->showFaces));
+        ImGui::Checkbox("Show vertex indices", &(gs->showVertexIndices));
+        ImGui::Checkbox("Show vertices", &(gs->showVertices));
+        ImGui::Checkbox("Show edges", &(gs->showEdges));
+        ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
+        ImGui::Checkbox("Show normals", &(gs->showNormals));
+        if (ImGui::Checkbox("Back Face Culling", &(gs->backFaceCulling))) {
+            if (gs->backFaceCulling) {
                 glEnable(GL_CULL_FACE);
-        }else{
-            glDisable(GL_CULL_FACE);
+            }
+            else {
+                glDisable(GL_CULL_FACE);
+            }
         }
-    }
-
-    ImGui::SliderFloat("Normal size", &(gs->normalSize), 0.5, 10.);
-    ImGui::SliderFloat("Camera speed", &(cam->speed), 0.001, 0.1);
-    ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
-    ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
-    ImGui::SliderFloat("FOV", &(gs->fov), 0, 180);
-
-    ImGui::SliderFloat("Cube scale x", &(gs->gameItems[0].scale.x), 0.1, 10);
-    ImGui::SliderFloat("Cube scale y", &(gs->gameItems[0].scale.y), 0.1, 10);
-    ImGui::SliderFloat("Cube scale z", &(gs->gameItems[0].scale.z), 0.1, 10);
-
-    ImGui::SliderFloat("Cube position x", &(gs->gameItems[0].position.x), -10, 10);
-    ImGui::SliderFloat("Cube position y", &(gs->gameItems[0].position.y), -10, 10);
-    ImGui::SliderFloat("Cube position z", &(gs->gameItems[0].position.z), -10, 10);
-
-    ImGui::SliderFloat("Cube rotation axis x", &(gs->gameItems[0].rotationAxis.x), -1., 1.);
-    ImGui::SliderFloat("Cube rotation axis y", &(gs->gameItems[0].rotationAxis.y), -1., 1.);
-    ImGui::SliderFloat("Cube rotation axis z", &(gs->gameItems[0].rotationAxis.z), -1., 1.);
-    ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[0].rotationAngle), -3. * M_PI, 3. * M_PI);
-
-
-    if (!gs->isGamePaused && ImGui::Button("Pause")) {
-        gs->isGamePaused = true;
-    }
-    if (gs->isGamePaused) {
-        if (ImGui::Button("Play")) {
-            gs->isGamePaused = false;
+        ImGui::SliderFloat("Normal size", &(gs->normalSize), 0.5, 10.);
+        if (ImGui::ColorEdit4("Clear color", &(gs->clearColor.x))) {
+            glClearColor(gs->clearColor.x, gs->clearColor.y, gs->clearColor.z, gs->clearColor.w);
         }
-        if (ImGui::Button("Next")) {
-            gs->nextStep = true;
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Camera")) {
+        ImGui::SliderFloat("Camera speed", &(cam->speed), 0.001, 0.1);
+        ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
+        ImGui::SliderFloat("FOV", &(gs->fov), 0, 180);
+        if (ImGui::Button("Reset camera")) {
+            cam->reset();
         }
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Time")) {
+        ImGui::SliderFloat("Speed of time", &(gs->speedOfTime), 0.1, 10);
+        if (!gs->isGamePaused && ImGui::Button("Pause")) {
+            gs->isGamePaused = true;
+        }
+        if (gs->isGamePaused) {
+            if (ImGui::Button("Play")) {
+                gs->isGamePaused = false;
+            }
+            if (ImGui::Button("Next")) {
+                gs->nextStep = true;
+            }
+        }
+        ImGui::TreePop();
+    }
+    if (ImGui::TreeNodeEx("Game Items")) {
+        for (int i = 0;i < gs->gameItemCount;i++) {
+            if (ImGui::TreeNodeEx(gs->gameItems[i].name)) {
+
+                if (ImGui::TreeNodeEx("Scale")) {
+                    ImGui::SliderFloat("Cube scale x", &(gs->gameItems[i].scale.x), 0.1, 10);
+                    ImGui::SliderFloat("Cube scale y", &(gs->gameItems[i].scale.y), 0.1, 10);
+                    ImGui::SliderFloat("Cube scale z", &(gs->gameItems[i].scale.z), 0.1, 10);
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNodeEx("Position")) {
+                    ImGui::SliderFloat("Cube position x", &(gs->gameItems[i].position.x), -10, 10);
+                    ImGui::SliderFloat("Cube position y", &(gs->gameItems[i].position.y), -10, 10);
+                    ImGui::SliderFloat("Cube position z", &(gs->gameItems[i].position.z), -10, 10);
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNodeEx("Rotation")) {
+                    ImGui::SliderFloat("Cube rotation axis x", &(gs->gameItems[i].rotationAxis.x), -1., 1.);
+                    ImGui::SliderFloat("Cube rotation axis y", &(gs->gameItems[i].rotationAxis.y), -1., 1.);
+                    ImGui::SliderFloat("Cube rotation axis z", &(gs->gameItems[i].rotationAxis.z), -1., 1.);
+                    ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[i].rotationAngle), -3. * M_PI, 3. * M_PI);
+                    ImGui::TreePop();
+                }
+                ImGui::ColorEdit4("Color", &(gs->gameItems[i].edgesColor.x));
+
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+
     }
 
-    if (ImGui::Button("Reset camera")) {
-        cam->reset();
-    }
+
+
+
+
 }
 
 void update(gameState* gs, windowParams* wp, camera* cam) {
@@ -430,7 +467,6 @@ void render(GLFWwindow* window, windowParams* wp, camera* cam, gameState* gs) {
     glUniform1f(glGetUniformLocation(gs->shaderProgram, "time"), gs->getIngameTime());
 
     //Draw
-    glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gs->numberTexture);
@@ -518,7 +554,9 @@ int main() {
 
     unsigned int shaderProgram = buildShaderProgram("./vertexShader.glsl", "./fragmentShader.glsl", "./geometryShader.glsl");
 
+    glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");
