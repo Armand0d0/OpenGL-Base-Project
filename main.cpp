@@ -136,6 +136,7 @@ struct gameState {
     bool showVertexIndices;
     bool showVertices;
     bool showNormals;
+    bool backFaceCulling;
     float normalSize;
     bool debugMode;
     float speedOfTime;
@@ -165,6 +166,7 @@ struct gameState {
         showVertexIndices(0),
         showVertices(0),
         showNormals(0),
+        backFaceCulling(1),
         normalSize(1.),
         debugMode(0),
         //time control params
@@ -345,6 +347,14 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
     ImGui::Checkbox("Show edges", &(gs->showEdges));
     ImGui::Checkbox("Show back side edges", &(gs->showBackSideEdges));
     ImGui::Checkbox("Show normals", &(gs->showNormals));
+    if(ImGui::Checkbox("Back Face Culling", &(gs->backFaceCulling))){
+        if(gs->backFaceCulling){
+                glEnable(GL_CULL_FACE);
+        }else{
+            glDisable(GL_CULL_FACE);
+        }
+    }
+
     ImGui::SliderFloat("Normal size", &(gs->normalSize), 0.5, 10.);
     ImGui::SliderFloat("Camera speed", &(cam->speed), 0.001, 0.1);
     ImGui::SliderFloat("Camera running speed factor", &(cam->runningSpeedFactor), 0.1, 10.);
@@ -480,17 +490,17 @@ int main() {
         -0.5f,  0.5f, -0.5f,      0.,0.,       // top left */
     };
     unsigned int indices[] = {  // cube faces
-        0, 1, 3,    //front
-        1, 2, 3,
+        0, 3, 1,    //front
+        1, 3, 2,
         1, 2, 6,    //botom 
         1, 6, 5,
         5, 6, 7,    //back
-        5, 7, 4,
+        4, 5, 7,
         0, 5, 4,    //right  
-        1, 0, 5,
-        3, 2, 6,    //left
-        6, 3, 7,
-        0, 3, 7,    //top
+        0, 1, 5,
+        2, 3, 6,    //left
+        7, 6, 3,
+        0, 7, 3,    //top
         0, 4, 7,//*/
 
     };
@@ -502,16 +512,14 @@ int main() {
     };
     unsigned int indices2[] = {
         0, 1, 2,
-        1, 2, 3,
+        1, 3, 2,
     };
     //-----------------------------------------------------------------------------------------
 
     unsigned int shaderProgram = buildShaderProgram("./vertexShader.glsl", "./fragmentShader.glsl", "./geometryShader.glsl");
 
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glEnable(GL_DEPTH_TEST);
-    /*glEnable(GL_CULL_FACE);
-     glCullFace(GL_BACK);*/
+    glCullFace(GL_BACK);
 
     gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");
     gameItem floor("Floor", vertices2, sizeof(vertices2) / sizeof(float), indices2, sizeof(indices2) / sizeof(int), "damier.png");
@@ -556,9 +564,9 @@ int main() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-        glDeleteTextures(1,&(gs.numberTexture));
+    glDeleteTextures(1, &(gs.numberTexture));
     for (int i = 0; i < gameItemCount;i++) {
-        glDeleteTextures(1,&(gs.gameItems[i].texture));
+        glDeleteTextures(1, &(gs.gameItems[i].texture));
         glDeleteBuffers(1, &(gs.gameItems[i].EBO));
         glDeleteBuffers(1, &(gs.gameItems[i].VBO));
         glDeleteVertexArrays(1, &(gs.gameItems[i].VAO));

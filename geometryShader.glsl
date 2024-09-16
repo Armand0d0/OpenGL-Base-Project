@@ -42,13 +42,15 @@ void rectangle(int index){
     TexCoord = cellSize*(vec2(0.,1.) + cellPos);
     EmitVertex();
 
+    gl_Position = vertexPos + vec4( size, size*ratio, 0.0, 0.0);
+    TexCoord = cellSize*(vec2(1.,0.)+ cellPos);
+    EmitVertex();
+
     gl_Position = vertexPos + vec4( -size, size*ratio, 0.0, 0.0);
     TexCoord = cellSize*(vec2(0.,0.)+ cellPos);
     EmitVertex();
     
-    gl_Position = vertexPos + vec4( size, size*ratio, 0.0, 0.0);
-    TexCoord = cellSize*(vec2(1.,0.)+ cellPos);
-    EmitVertex();
+    
 
     EndPrimitive();
 
@@ -91,8 +93,8 @@ void main() {
         normal = normalize(cross(gs_in[1].pos3d.xyz - gs_in[0].pos3d.xyz,gs_in[2].pos3d.xyz - gs_in[0].pos3d.xyz));
         
         // pick the right normal direction
-        vec3 toCam = camPos-middle3d.xyz;
-        normal = dot(toCam,normal) >= 0 ? normal : -normal;
+        //vec3 toCam = camPos-middle3d.xyz;
+        //normal = dot(toCam,normal) >= 0 ? normal : -normal;
 
         if(showNormals == 1){
             showNormal(normal,middle3d);
