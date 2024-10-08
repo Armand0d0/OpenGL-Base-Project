@@ -167,7 +167,7 @@ struct gameState {
         showVertexIndices(0),
         showVertices(0),
         showNormals(0),
-        backFaceCulling(1),
+        backFaceCulling(0),
         normalSize(1.),
         debugMode(0),
         //time control params
@@ -414,7 +414,7 @@ void processInputs(GLFWwindow* window, windowParams* wp, gameState* gs, mousePar
                     ImGui::SliderFloat("Cube rotation angle", &(gs->gameItems[i].rotationAngle), -3. * M_PI, 3. * M_PI);
                     ImGui::TreePop();
                 }
-                ImGui::ColorEdit4("Color", &(gs->gameItems[i].edgesColor.x));
+                ImGui::ColorEdit4("Edges Color", &(gs->gameItems[i].edgesColor.x));
 
                 ImGui::TreePop();
             }
@@ -556,7 +556,6 @@ int main() {
 
     glClearColor(135. / 255., 209. / 255., 235 / 255., 1.);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     gameItem cube("Cube", vertices, sizeof(vertices) / sizeof(float), indices, sizeof(indices) / sizeof(int), "Carre.png");

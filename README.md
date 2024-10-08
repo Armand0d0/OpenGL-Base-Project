@@ -7,5 +7,5 @@ TODO:
 -set multiple texture coordinates for each vertex  
 -set per vertex depth for vertex highlighting   
 -show rotation axis on hud  
--shadows   
+-more lights / shadows    
 -adapt window size to the screen  
