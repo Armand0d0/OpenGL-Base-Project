@@ -1,4 +1,7 @@
 #include "gameItem.h"
+void gameItem::loadMeshFromObjFile(char* filename){
+
+}
 
 void gameItem::loadMesh(float* vertices, unsigned int vertexCount, unsigned int* indices, unsigned int indexCount) {
     glGenVertexArrays(1, &this->VAO);
